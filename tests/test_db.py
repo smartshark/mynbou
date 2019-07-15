@@ -80,7 +80,7 @@ class TestDatabase(unittest.TestCase):
                         self._ids[document['id']] = r.id
 
     def test_bug_fixes(self):
-        """Utilize the rename_tracking fixture to check if bug-fixes get assigned to the correct file after subsequen renames."""
+        """Utilize the rename_tracking fixture to check if bug-fixes get assigned to the correct file after subsequent renames."""
         self._load_fixture('rename_tracking')
 
         release = "hash4"

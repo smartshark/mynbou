@@ -78,7 +78,7 @@
                     "revision_hash": "hash1",
                     "message": "added test.py and test2.py",
                     "committer_date": "2018-01-01 03:01:01 +0200",
-                    "author_id": "{user2}"
+                    "author_id": "{user1}"
                 },
                 {
                     "id": "commit2",
@@ -96,7 +96,7 @@
                     "message": "remove a() in test.py",
                     "committer_date": "2018-01-05 03:01:01 +0200",
                     "parents": ["hash2"],
-                    "author_id": "{user2}"
+                    "author_id": "{user1}"
                 },
                 {
                     "id": "commit4",

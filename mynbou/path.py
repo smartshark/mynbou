@@ -17,7 +17,7 @@ import networkx as nx
 from Levenshtein import distance
 from dateutil.relativedelta import relativedelta
 
-from pycoshark.mongomodels import Commit, CodeEntityState, FileAction, File, Issue, Hunk, Refactoring, CommitChanges, Identity
+from pycoshark.mongomodels import Commit, CodeEntityState, FileAction, File, Issue, Hunk, Refactoring, CommitChanges, People
 from bson.objectid import ObjectId
 from mynbou.constants import *
 
@@ -252,7 +252,7 @@ class Volg(object):
 
         It prepends to a list because we are traversing backwards from the release date.
         """
-        author_identity = Identity.objects.get(people=commit.author_id)
+        author_identity = People.objects.get(id=commit.author_id)  # author_identity = Identity.objects.get(people=commit.author_id)  for now we ignore Identities
 
         self._change_metrics[file]['authors'] = ['{}'.format(author_identity.id)] + self._change_metrics[file]['authors']
         self._change_metrics[file]['revisions'] = [commit.revision_hash] + self._change_metrics[file]['revisions']
