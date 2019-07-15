@@ -11,7 +11,7 @@ script:
   - make html
   - python setup.py install
   # we need $addFields support in mongomock and it should ignore missing keys (only for the tests)
-  - pip install git+https://github.com/atrautsch/mongomock.git@\$addFields && python setup.py test
+  - pip install git+https://github.com/atrautsch/mongomock.git@\$addFields#egg=mongomock-3.17.2 && python setup.py test
 
 deploy:
   - provider: pages
