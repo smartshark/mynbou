@@ -1,5 +1,8 @@
 # mynbou
 
+[![Build Status](https://travis-ci.org/smartshark/mynbou.svg?branch=master)](https://travis-ci.org/smartshark/mynbou)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://smartshark.github.io/mynbou/)
+
 Defect prediction dataset extraction for SmartSHARK.
 
 Included are:
