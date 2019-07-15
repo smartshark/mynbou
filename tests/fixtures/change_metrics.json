@@ -1,0 +1,369 @@
+{
+    "collections": [
+        {
+            "model": "People",
+            "documents": [
+                {
+                    "id": "user1",
+                    "name": "TestAutor",
+                    "email": "test@test.de"
+                }
+            ]
+        },
+        {
+            "model": "People",
+            "documents": [
+                {
+                    "id": "user2",
+                    "name": "TestAutor2",
+                    "email": "test2@test.de"
+                }
+            ]
+        },
+        {
+            "model": "Identity",
+            "documents": [
+                {
+                    "id": "identity1",
+                    "people": ["{user1}", "{user2}"]
+                }
+            ]
+        },
+        {
+            "model": "Project",
+            "documents": [
+                {
+                    "id": "project1",
+                    "name": "Testproject"
+                }
+            ]
+        },
+        {
+            "model": "VCSSystem",
+            "documents": [
+                {
+                    "id": "vcs1",
+                    "project_id": "{project1}",
+                    "repository_type": "git",
+                    "url": "http://www.github.com/smartshark/visualSHARK"
+                }
+            ]
+        },
+        {
+            "model": "File",
+            "documents": [
+                {
+                    "id": "file1",
+                    "vcs_system_id": "{vcs1}",
+                    "path": "test.java"
+                },
+                {
+                    "id": "file2",
+                    "vcs_system_id": "{vcs1}",
+                    "path": "test2.java"
+                },
+                {
+                    "id": "file3",
+                    "vcs_system_id": "{vcs1}",
+                    "path": "test3.java"
+                }
+            ]
+        },
+        {
+            "model": "Commit",
+            "documents": [
+                {
+                    "id": "commit1",
+                    "vcs_system_id": "{vcs1}",
+                    "revision_hash": "hash1",
+                    "message": "added test.py and test2.py",
+                    "committer_date": "2018-01-01 03:01:01 +0200",
+                    "author_id": "{user2}"
+                },
+                {
+                    "id": "commit2",
+                    "vcs_system_id": "{vcs1}",
+                    "revision_hash": "hash2",
+                    "message": "modified test.py",
+                    "committer_date": "2018-01-03 03:01:01 +0200",
+                    "parents": ["hash1"],
+                    "author_id": "{user1}"
+                },
+                {
+                    "id": "commit3",
+                    "vcs_system_id": "{vcs1}",
+                    "revision_hash": "hash3",
+                    "message": "remove a() in test.py",
+                    "committer_date": "2018-01-05 03:01:01 +0200",
+                    "parents": ["hash2"],
+                    "author_id": "{user2}"
+                },
+                {
+                    "id": "commit4",
+                    "vcs_system_id": "{vcs1}",
+                    "revision_hash": "hash4",
+                    "message": "add d() in test.py",
+                    "committer_date": "2018-01-05 04:01:01 +0200",
+                    "parents": ["hash3"],
+                    "author_id": "{user1}"
+                },
+                {
+                    "id": "commit5",
+                    "vcs_system_id": "{vcs1}",
+                    "revision_hash": "hash5",
+                    "message": "add b() in test2.py",
+                    "committer_date": "2018-01-09 03:01:01 +0200",
+                    "parents": ["hash4"],
+                    "author_id": "{user1}"
+                },
+                {
+                    "id": "commit6",
+                    "vcs_system_id": "{vcs1}",
+                    "revision_hash": "hash6",
+                    "message": "add c() in test.py, add d() in test2.py, include test3.py",
+                    "committer_date": "2018-01-24 03:01:01 +0200",
+                    "parents": ["hash5"],
+                    "author_id": "{user1}"
+                }
+            ]
+        },
+        {
+            "model": "FileAction",
+            "documents": [
+                {
+                    "id": "fileaction1",
+                    "file_id": "{file1}",
+                    "commit_id": "{commit1}",
+                    "mode": "A",
+                    "lines_added": 3,
+                    "lines_deleted": 0
+                },
+                {
+                    "id": "fileaction2",
+                    "file_id": "{file2}",
+                    "commit_id": "{commit1}",
+                    "mode": "A",
+                    "lines_added": 3,
+                    "lines_deleted": 0
+                },
+                {
+                    "id": "fileaction3",
+                    "file_id": "{file1}",
+                    "commit_id": "{commit2}",
+                    "mode": "M",
+                    "lines_added": 3,
+                    "lines_deleted": 0
+                },
+                {
+                    "id": "fileaction4",
+                    "file_id": "{file1}",
+                    "commit_id": "{commit3}",
+                    "mode": "M",
+                    "lines_added": 0,
+                    "lines_deleted": 3
+                },
+                {
+                    "id": "fileaction5",
+                    "file_id": "{file1}",
+                    "commit_id": "{commit4}",
+                    "mode": "M",
+                    "lines_added": 2,
+                    "lines_deleted": 0
+                },
+                {
+                    "id": "fileaction6",
+                    "file_id": "{file2}",
+                    "commit_id": "{commit5}",
+                    "mode": "M",
+                    "lines_added": 3,
+                    "lines_deleted": 0
+                },
+                {
+                    "id": "fileaction7",
+                    "file_id": "{file1}",
+                    "commit_id": "{commit6}",
+                    "mode": "M",
+                    "lines_added": 3,
+                    "lines_deleted": 0
+                },
+                {
+                    "id": "fileaction8",
+                    "file_id": "{file2}",
+                    "commit_id": "{commit6}",
+                    "mode": "M",
+                    "lines_added": 3,
+                    "lines_deleted": 0
+                },
+                {
+                    "id": "fileaction9",
+                    "file_id": "{file3}",
+                    "commit_id": "{commit6}",
+                    "mode": "A",
+                    "lines_added": 4,
+                    "lines_deleted": 0
+                }
+            ]
+        },
+        {
+            "model": "Hunk",
+            "documents": [
+                {
+                    "id": "hunk1",
+                    "file_action_id": "{fileaction1}",
+                    "new_start": 0,
+                    "new_lines": 3,
+                    "old_start": 0,
+                    "old_lines": 0,
+                    "content": "+def b():\n+pass\n+pass"
+                },
+                {
+                    "id": "hunk2",
+                    "file_action_id": "{fileaction2}",
+                    "new_start": 0,
+                    "new_lines": 3,
+                    "old_start": 0,
+                    "old_lines": 0,
+                    "content": "+def c():\n+pass\n+pass"
+                },
+                {
+                    "id": "hunk3",
+                    "file_action_id": "{fileaction3}",
+                    "new_start": 0,
+                    "new_lines": 3,
+                    "old_start": 0,
+                    "old_lines": 0,
+                    "content": "+\n+def a():\n+pass"
+                },
+                {
+                    "id": "hunk4",
+                    "file_action_id": "{fileaction4}",
+                    "new_start": 3,
+                    "new_lines": 0,
+                    "old_start": 0,
+                    "old_lines": 3,
+                    "content": "-\n-def a():\n-pass"
+                },
+                {
+                    "id": "hunk5",
+                    "file_action_id": "{fileaction5}",
+                    "new_start": 0,
+                    "new_lines": 2,
+                    "old_start": 0,
+                    "old_lines": 0,
+                    "content": "+\n+def d():\n+pass"
+                },
+                {
+                    "id": "hunk6",
+                    "file_action_id": "{fileaction6}",
+                    "new_start": 0,
+                    "new_lines": 3,
+                    "old_start": 0,
+                    "old_lines": 0,
+                    "content": "+\n+def b():\n+pass\n+pass"
+                },
+                {
+                    "id": "hunk7",
+                    "file_action_id": "{fileaction7}",
+                    "new_start": 0,
+                    "new_lines": 3,
+                    "old_start": 0,
+                    "old_lines": 0,
+                    "content": ""
+                },
+                {
+                    "id": "hunk8",
+                    "file_action_id": "{fileaction8}",
+                    "new_start": 0,
+                    "new_lines": 3,
+                    "old_start": 0,
+                    "old_lines": 0,
+                    "content": ""
+                },
+                {
+                    "id": "hunk9",
+                    "file_action_id": "{fileaction9}",
+                    "new_start": 0,
+                    "new_lines": 4,
+                    "old_start": 0,
+                    "old_lines": 0,
+                    "content": ""
+                }
+            ]
+        },        
+        {
+            "model": "CodeEntityState",
+            "documents": [
+                {
+                    "id": "ces1",
+                    "s_key": "CESFORCOMMIT1FILE1",
+                    "long_name": "test.b()",
+                    "commit_id": "{commit1}",
+                    "file_id": "{file1}",
+                    "ce_type": "class",
+                    "start_line": 0,
+                    "end_line": 0,
+                    "metrics": {
+                        "MetricA": 40,
+                        "MetricB": -5
+                    }
+                },
+                {
+                    "id": "ces2",
+                    "s_key": "CESFORCOMMIT1FILE2",
+                    "long_name": "test2.b()",
+                    "commit_id": "{commit1}",
+                    "file_id": "{file2}",
+                    "ce_type": "class",
+                    "start_line": 0,
+                    "end_line": 0,
+                    "metrics": {
+                        "MetricA": 10,
+                        "MetricB": 0.99
+                    }
+                },
+                {
+                    "id": "ces3",
+                    "s_key": "CESFORCOMMIT5FILE1",
+                    "long_name": "test.java",
+                    "commit_id": "{commit6}",
+                    "file_id": "{file1}",
+                    "ce_type": "file",
+                    "start_line": 0,
+                    "end_line": 0,
+                    "metrics": {
+                        "MetricA": 40,
+                        "MetricB": -5
+                    }
+                },
+                {
+                    "id": "ces4",
+                    "s_key": "CESFORCOMMIT5FILE2",
+                    "long_name": "test2.java",
+                    "commit_id": "{commit6}",
+                    "file_id": "{file2}",
+                    "ce_type": "file",
+                    "start_line": 0,
+                    "end_line": 0,
+                    "metrics": {
+                        "MetricA": 10,
+                        "MetricB": 0.99
+                    }
+                },
+                {
+                    "id": "ces5",
+                    "s_key": "CESFORCOMMIT5FILE3",
+                    "long_name": "test3.java",
+                    "commit_id": "{commit6}",
+                    "file_id": "{file3}",
+                    "ce_type": "file",
+                    "start_line": 0,
+                    "end_line": 0,
+                    "metrics": {
+                        "MetricA": 10,
+                        "MetricB": 0.99
+                    }
+                }
+            ]
+        }
+    ]
+}

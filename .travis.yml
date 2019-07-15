@@ -1,0 +1,23 @@
+sudo: required
+language: python
+python:
+  - "3.6"
+
+before_install:
+  - pip install Sphinx
+  - pip install sphinx_rtd_theme
+  # we need $addFields support in mongomock and it should ignore missing keys (only for the tests)
+  - pip install git+https://github.com/atrautsch/mongomock.git@$addFields
+
+script:
+  - make html
+  - python setup.py install
+  - python setup.py test
+
+deploy:
+  - provider: pages
+    github-token: ${GH_TOKEN}
+    local-dir: $TRAVIS_BUILD_DIR/docs/build
+    skip-cleanup: true  
+    on:
+      branch: master
