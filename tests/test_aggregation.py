@@ -56,7 +56,7 @@ class TestAggregations(unittest.TestCase):
         self.assertEqual(0, hoover(vals))
 
         vals = [2, 10]
-        self.assertEqual(0.3333333333333333, hoover(vals))
+        self.assertEqual(0.33333333333333337, hoover(vals))
 
     def test_atkinson(self):
         vals = [2, 10]

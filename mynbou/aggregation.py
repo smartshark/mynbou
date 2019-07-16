@@ -83,7 +83,7 @@ def stddev(values):
     m = statistics.mean(values)
     n = [math.pow(v - m, 2) for v in values]
 
-    return math.sqrt(sum(n) / N)
+    return math.sqrt(msum(n) / N)
 
 
 def cov(values):
@@ -118,7 +118,7 @@ def gini(values):
     second = []
     for i, v in enumerate(values):
         second.append(v * (i + 1))  # +1 because enumerate starts from 0 and the formula starts from 1
-    second = sum(second) - (len(values) + 1) * sum(values)
+    second = msum(second) - (len(values) + 1) * msum(values)
 
     return first * second
 
@@ -133,12 +133,12 @@ def hoover(values):
     """
     values = sorted(values)
 
-    if sum(values) == 0 or math.isnan(sum(values)):
+    if sum(values) == 0 or math.isnan(msum(values)):
         return 0
 
     # no fraction here as sum(values) could also be a fraction
-    s = [abs(Fraction(v / sum(values)) - Fraction(1, len(values))) for v in values]  # seems more exact than passing the div
-    return 0.5 * sum(s)
+    s = [abs(Fraction(v / msum(values)) - Fraction(1, len(values))) for v in values]  # seems more exact than passing the div
+    return 0.5 * msum(s)
 
 
 def atkinson(values):
