@@ -40,7 +40,28 @@ def msum(iterable):
     return sum(partials, 0.0)
 
 
+def mean(values):
+    r"""Arithmetic mean value of the given values.
+
+    .. math::
+
+        \mu_m = \frac{1}{N}\sum_{i=1}^N m_i
+
+    """
+    return mean(values)
+
+
 def median(values):
+    r"""Median of the given values.
+
+    .. math::
+
+        M_m = \begin{cases}
+                m_{\frac{n+1}{2}} & \text{if}~N~\text{is odd}\\
+                \frac{1}{2}(m_{\frac{n}{2}} + m_{\frac{n+2}{2}}) & \text{otherwise}.
+              \end{cases}
+
+    """
     values = sorted(values)
     if len(values) % 2 == 0:
         return 0.5 * (values[math.floor(len(values) / 2)] + values[math.floor((len(values) - 1) / 2)])
@@ -49,6 +70,13 @@ def median(values):
 
 
 def stddev(values):
+    r"""Standard deviation of the given values.
+
+    .. math::
+
+        \sigma_m = \sqrt{\frac{1}{N}\sum_{i=1}^N(m_i - \mu_m)^2}
+
+    """
     values = sorted(values)
     N = len(values)
 
@@ -59,6 +87,13 @@ def stddev(values):
 
 
 def cov(values):
+    r"""Coefficient of variation of the given values.
+
+    .. math::
+
+        \text{Cov}_m = \frac{\sigma_m}{\mu_m}
+
+    """
     values = sorted(values)
     mean = statistics.mean(values)
     ret = 0
@@ -68,6 +103,13 @@ def cov(values):
 
 
 def gini(values):
+    r"""Gini index of the given values.
+
+    .. math::
+
+        \text{Gini}_m = \frac{2}{N\textstyle \sum_m}\lbrack\sum_{i=1}^N(m_i * i) - (N + 1)\textstyle \sum_m\rbrack
+
+    """
     if len(values) * sum(values) == 0:
         return 0
     values = sorted(values)
@@ -82,16 +124,31 @@ def gini(values):
 
 
 def hoover(values):
+    r"""Hoover index of the given values.
+
+    .. math::
+
+        \text{Hoover}_m = \frac{1}{2}\sum_{i=i}^N|\frac{m_i}{\textstyle \sum_m} - \frac{1}{N}|
+
+    """
     values = sorted(values)
 
     if sum(values) == 0 or math.isnan(sum(values)):
         return 0
 
-    s = [abs(Fraction(v, sum(values)) - Fraction(1, len(values))) for v in values]  # seems more exact than passing the div
+    # no fraction here as sum(values) could also be a fraction
+    s = [abs(Fraction(v / sum(values)) - Fraction(1, len(values))) for v in values]  # seems more exact than passing the div
     return 0.5 * sum(s)
 
 
 def atkinson(values):
+    r"""Atkinson index of the given values.
+
+    .. math::
+
+        \text{Atkinson}_m = 1 - \frac{1}{\mu_m}(\frac{1}{N}\sum_{i=1}^N\sqrt{m_i})^2
+
+    """
     values = sorted(values)
     mean = statistics.mean(values)
 
@@ -108,6 +165,13 @@ def atkinson(values):
 
 
 def shannon_entropy(values):
+    r"""Shannon's entropy of the given values.
+
+    .. math::
+
+        E_m = -\frac{1}{N}\sum_{i=1}^N\lbrack\frac{freq(m_i)}{N} * \ln\frac{freq(m_i)}{N}\rbrack
+
+    """
     values = sorted(values)
     N = len(values)
 
@@ -130,6 +194,13 @@ def shannon_entropy(values):
 
 
 def generalized_entropy(values):
+    r"""Generalized entropy of the given values.
+
+    .. math::
+
+        \text{GE}_m = -\frac{1}{N\alpha (1-\alpha)}\sum_{i=1}^N\lbrack(\frac{m_i}{\mu_m})^\alpha - 1\rbrack, \alpha=0.5
+
+    """
     alpha = 0.5
     values = sorted(values)
     N = len(values)
@@ -159,6 +230,13 @@ def generalized_entropy(values):
 
 
 def theil(values):
+    r"""Theil index of the given values.
+
+    .. math::
+
+        \text{Theil}_m = \frac{1}{N} \sum_{i=1}^N \lbrack \frac{m_i}{\mu_m} * \ln(\frac{m_i}{\mu_m})\rbrack
+
+    """
     values = sorted(values)
     N = len(values)
     mean = statistics.mean(values)

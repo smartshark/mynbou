@@ -300,7 +300,7 @@ class SmartsharkPlugin(object):
 
         # write full file with only cleaned instances
         cleaned_instances = self._clean_instances(instances)
-        data = {'release_date': str(c.committer_date),
+        data = {'release_date': release_information['release_date'],
                 'instances': cleaned_instances}
         with open(self.release_name + '.json', 'w') as outfile:
             json.dump(data, outfile, sort_keys=True, indent=4)
