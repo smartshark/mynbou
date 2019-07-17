@@ -80,7 +80,7 @@ class Mynbou(object):
             for commit in path:
                 change_path_commits.add(commit)
 
-        release_information = {'change_path_commits': list(change_path_commits),  # we use these for dambros metrics
+        release_information = {'change_path_commits': change_path_commits,
                                'change_path_cutoff_date': str(v._release_date - relativedelta(months=6)),
                                'release_revision': self.release_hash,
                                'release_date': str(v._release_date),
