@@ -194,7 +194,7 @@ class Volg(object):
                 # load bug_inducing FileAction
                 for ifa in FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JLMIV++'}):
 
-                    bc = Commit.objects.get(id=ifa.commit_id)
+                    bc = Commit.objects.get(id=ifa.commit_id)      #(id=ifa.commit_id).only('revision_hash', 'id', 'fixed_issue_ids').get()
                     blame_commit = bc.revision_hash
                     blame_file = File.objects.get(id=ifa.file_id).path
 
@@ -478,53 +478,54 @@ class Volg(object):
         for release_file in release_files:
             aliases[release_file] = release_file
 
-        for path in paths:
-            for revision_hash in path:
-                c = Commit.objects.get(vcs_system_id=vcs.id, revision_hash=revision_hash)
+        for c in Commit.objects.filter(vcs_system_id=vcs.id).order_by('-committer_date').only('id', 'revision_hash', 'parents', 'committer_date'):
 
-                # skip merge commits as we traverse all possible paths
-                if len(c.parents) > 1:
-                    continue
+            revision_hash = c.revision_hash
+            if not nx.has_path(self._graph, c.revision_hash, self._target_release_hash):
+                continue
 
-                true_renames, false_renames = self._heuristic_renames(c)
+            if len(c.parents) > 1:
+                continue
 
-                for old_file, new_file in true_renames:
-                    if old_file in aliases.keys() and new_file in aliases.keys() and aliases[old_file] != aliases[new_file]:
-                        self._log.warning('[{}] overwriting target {} of alias {} with target {}'.format(revision_hash, aliases[old_file], old_file, aliases[new_file]))
+            true_renames, false_renames = self._heuristic_renames(c)
 
-                    # if the file is in our release files (directly)
-                    if new_file in release_files:
-                        aliases[old_file] = aliases[new_file]  # this works because we prefilled the aliases with target -> target
+            for old_file, new_file in true_renames:
+                if old_file in aliases.keys() and new_file in aliases.keys() and aliases[old_file] != aliases[new_file]:
+                    self._log.warning('[{}] overwriting target {} of alias {} with target {}'.format(revision_hash, aliases[old_file], old_file, aliases[new_file]))
 
-                    # else we have a subsequent rename
-                    elif new_file in aliases.keys() and aliases[new_file] in release_files:
-                        aliases[old_file] = aliases[new_file]
+                # if the file is in our release files (directly)
+                if new_file in release_files:
+                    aliases[old_file] = aliases[new_file]  # this works because we prefilled the aliases with target -> target
 
-                    # also record file name changes, currently only used by external dambros
-                    if len(c.parents) == 1 and new_file in aliases.keys():
-                        file_name_changes[aliases[new_file]] = {c.parents[0]: old_file}
+                # else we have a subsequent rename
+                elif new_file in aliases.keys() and aliases[new_file] in release_files:
+                    aliases[old_file] = aliases[new_file]
 
-                # we collect additions from three sources:
-                # 1. additions via doublicate renames (false_renames, see _heuristic_renames)
-                # 2. real file addtions from git
-                # 3. targets of copy operations
-                added_files = []
-                for new_file in false_renames:
-                    if new_file in aliases.keys():
-                        added_files.append(new_file)
+                # also record file name changes, currently only used by external dambros
+                if len(c.parents) == 1 and new_file in aliases.keys():
+                    file_name_changes[aliases[new_file]] = {c.parents[0]: old_file}
 
-                for fa in FileAction.objects.filter(commit_id=c.id, mode__in=['A', 'C']):
-                    f = File.objects.get(id=fa.file_id)
-                    if f.path in aliases.keys():
-                        added_files.append(f.path)
+            # we collect additions from three sources:
+            # 1. additions via doublicate renames (false_renames, see _heuristic_renames)
+            # 2. real file addtions from git
+            # 3. targets of copy operations
+            added_files = []
+            for new_file in false_renames:
+                if new_file in aliases.keys():
+                    added_files.append(new_file)
 
-                for new_file in added_files:
-                    if aliases[new_file] not in additions.keys():
-                        additions[aliases[new_file]] = []
-                    additions[aliases[new_file]].append(c.committer_date)
+            for fa in FileAction.objects.filter(commit_id=c.id, mode__in=['A', 'C']):
+                f = File.objects.get(id=fa.file_id)
+                if f.path in aliases.keys():
+                    added_files.append(f.path)
+
+            for new_file in added_files:
+                if aliases[new_file] not in additions.keys():
+                    additions[aliases[new_file]] = []
+                additions[aliases[new_file]].append(c.committer_date)
 
         ret = {}
         for file_name, add_dates in additions.items():
-            ret[file_name] = min(add_dates)
+            ret[file_name] = max(add_dates)  # if we have multiple possible addition dates we use the max
 
         return ret, aliases, file_name_changes
