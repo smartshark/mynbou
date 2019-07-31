@@ -23,14 +23,14 @@ from mynbou import aggregation
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
-i = logging.StreamHandler(sys.stdout)
-e = logging.StreamHandler(sys.stderr)
+#i = logging.StreamHandler(sys.stdout)
+#e = logging.StreamHandler(sys.stderr)
 
-i.setLevel(logging.DEBUG)
-e.setLevel(logging.ERROR)
+#i.setLevel(logging.DEBUG)
+#e.setLevel(logging.ERROR)
 
-log.addHandler(i)
-log.addHandler(e)
+#log.addHandler(i)
+#log.addHandler(e)
 
 
 class SmartsharkPlugin(object):
