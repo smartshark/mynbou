@@ -252,9 +252,9 @@ class Volg(object):
 
         It prepends to a list because we are traversing backwards from the release date.
         """
-        author_identity = People.objects.get(id=commit.author_id)  # author_identity = Identity.objects.get(people=commit.author_id)  for now we ignore Identities
+        author_identity = commit.author_id  # author_identity = Identity.objects.get(people=commit.author_id)  for now we ignore Identities
 
-        self._change_metrics[file]['authors'] = ['{}'.format(author_identity.id)] + self._change_metrics[file]['authors']
+        self._change_metrics[file]['authors'] = ['{}'.format(author_identity)] + self._change_metrics[file]['authors']
         self._change_metrics[file]['revisions'] = [commit.revision_hash] + self._change_metrics[file]['revisions']
         self._change_metrics[file]['lines_added'] = [fa.lines_added] + self._change_metrics[file]['lines_added']
         self._change_metrics[file]['lines_deleted'] = [fa.lines_deleted] + self._change_metrics[file]['lines_deleted']
