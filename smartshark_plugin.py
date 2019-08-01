@@ -11,7 +11,7 @@ import json
 import timeit
 import math
 
-from pycoshark.mongomodels import VCSSystem
+from pycoshark.mongomodels import Project, VCSSystem
 from pycoshark.utils import create_mongodb_uri_string
 from pycoshark.utils import get_base_argparser
 
@@ -23,14 +23,14 @@ from mynbou import aggregation
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
-i = logging.StreamHandler(sys.stdout)
-e = logging.StreamHandler(sys.stderr)
+#i = logging.StreamHandler(sys.stdout)
+#e = logging.StreamHandler(sys.stderr)
 
-i.setLevel(logging.DEBUG)
-e.setLevel(logging.ERROR)
+#i.setLevel(logging.DEBUG)
+#e.setLevel(logging.ERROR)
 
-log.addHandler(i)
-log.addHandler(e)
+#log.addHandler(i)
+#log.addHandler(e)
 
 
 class SmartsharkPlugin(object):
@@ -293,7 +293,8 @@ class SmartsharkPlugin(object):
     def start_mining(self, release):
         start = timeit.default_timer()
 
-        self.vcs = VCSSystem.objects.get(url=self.args.repository_url)
+        project_id = Project.objects.get(name=self.args.project_name).id
+        self.vcs = VCSSystem.objects.get(project_id=project_id)
 
         m = Mynbou(self.vcs, self.args.project_name, release)
         instances, release_information = m.release()
@@ -366,7 +367,6 @@ def main(args):
 
 if __name__ == '__main__':
     parser = get_base_argparser('Analyze the given URI. An URI should be a GIT Repository address.', '1.0.0')
-    parser.add_argument('-u', '--repository-url', help='URL of the projects repository (e.g., GIT Url).', required=True)
 
     parser.add_argument('-pn', '--project-name', help='Name of the project.', required=True)
     parser.add_argument('-rn', '--release-name', help='Name of the release to be mined.', required=True)
