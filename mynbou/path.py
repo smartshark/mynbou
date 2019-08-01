@@ -468,7 +468,9 @@ class Volg(object):
     def first_occured(self, vcs, paths, release_files):
         """Traverse all FileActions of all paths to find when which file was added.
 
-        Follows subsequent renames.
+        Follows subsequent renames. We collect aliases for files because we need to know
+        which names point to a file contained in the release.
+        We do this by having key, value pairs of alias -> release file.
         """
         additions = {}
         aliases = {}
@@ -491,7 +493,9 @@ class Volg(object):
 
             for old_file, new_file in true_renames:
                 if old_file in aliases.keys() and new_file in aliases.keys() and aliases[old_file] != aliases[new_file]:
-                    self._log.warning('[{}] overwriting target {} of alias {} with target {}'.format(revision_hash, aliases[old_file], old_file, aliases[new_file]))
+                    self._log.warning('[{}] would overwrite target {} of alias {} with target {}, creating fake addition of the target'.format(revision_hash, aliases[old_file], old_file, aliases[new_file]))
+                    false_renames.append(aliases[new_file])
+                    continue
 
                 # if the file is in our release files (directly)
                 if new_file in release_files:
@@ -511,21 +515,27 @@ class Volg(object):
             # 3. targets of copy operations
             added_files = []
             for new_file in false_renames:
-                if new_file in aliases.keys():
-                    added_files.append(new_file)
+                added_files.append(new_file)
 
             for fa in FileAction.objects.filter(commit_id=c.id, mode__in=['A', 'C']):
                 f = File.objects.get(id=fa.file_id)
-                if f.path in aliases.keys():
-                    added_files.append(f.path)
+                added_files.append(f.path)
 
             for new_file in added_files:
-                if aliases[new_file] not in additions.keys():
-                    additions[aliases[new_file]] = []
-                additions[aliases[new_file]].append(c.committer_date)
+                if new_file not in additions.keys():
+                    additions[new_file] = []
+                additions[new_file].append(c.committer_date)
 
         ret = {}
         for file_name, add_dates in additions.items():
-            ret[file_name] = max(add_dates)  # if we have multiple possible addition dates we use the max
+            if file_name not in aliases.keys():
+                continue
+            if aliases[file_name] not in ret.keys():
+                ret[aliases[file_name]] = []
+            ret[aliases[file_name]] += add_dates
 
-        return ret, aliases, file_name_changes
+        first_occurences = {}
+        for file_name, add_dates in ret.items():
+            first_occurences[file_name] = max(add_dates)  # if we have multiple possible addition dates we use the max
+
+        return first_occurences, aliases, file_name_changes
