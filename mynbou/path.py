@@ -478,7 +478,7 @@ class Volg(object):
         for release_file in release_files:
             aliases[release_file] = release_file
 
-        for c in Commit.objects.filter(vcs_system_id=vcs.id).order_by('-committer_date').only('id', 'revision_hash', 'parents', 'committer_date'):
+        for c in Commit.objects.filter(vcs_system_id=vcs.id).order_by('-committer_date','-author_date').only('id', 'revision_hash', 'parents', 'committer_date'):
 
             revision_hash = c.revision_hash
             if not nx.has_path(self._graph, c.revision_hash, self._target_release_hash):
