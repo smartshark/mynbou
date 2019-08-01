@@ -122,6 +122,10 @@ class Mynbou(object):
             if not path.endswith(package_name):
                 continue
 
+            # check if class actually has a package
+            if not package_name:
+                continue
+
             # fetch package for our package_name, thorw error if not exactly one is found
             cgs = CodeGroupState.objects.get(commit_id=commit.id, cg_type='package', long_name=package_name)
             for k, v in cgs.metrics.items():
