@@ -115,7 +115,7 @@ class SmartsharkPlugin(object):
                         if instance['file'] not in bug_fixes.keys():
                             bug_fixes[instance['file']] = set()
 
-                        issue_name = '{}_{}'.format(iss[0], max(latest_bugfix[iss[0]]))
+                        issue_name = '{}_{}_{}'.format(iss[0], iss[3], max(latest_bugfix[iss[0]]))
                         bug_fixes[instance['file']].add(issue_name)
                         inst[issue_name] = 1
                     inst['BUGFIX_count'] = len(set(unique_ids))
@@ -303,25 +303,28 @@ class SmartsharkPlugin(object):
         cleaned_instances = self._clean_instances(instances)
         data = {'release_date': release_information['release_date'],
                 'instances': cleaned_instances}
-        with open(self.release_name + '.json', 'w') as outfile:
-            json.dump(data, outfile, sort_keys=True, indent=4)
+        if self.args.generate_json:
+            with open(self.release_name + '.json', 'w') as outfile:
+                json.dump(data, outfile, sort_keys=True, indent=4)
 
         # information about bug_fixes written to extra file
         bug_info = self._bug_info(cleaned_instances)
-        with open(self.release_name + '_bug_fixes.json', 'w') as outfile:
-            json.dump(bug_info, outfile, sort_keys=True, indent=4)
+        if self.args.generate_json:
+            with open(self.release_name + '_bug_fixes.json', 'w') as outfile:
+                json.dump(bug_info, outfile, sort_keys=True, indent=4)
 
         # harmonize instances and get keys from harmonization, they are later used to provide a header for the csv file
         harmonized_instances, bug_fixes, keys = self._harmonize_instances(cleaned_instances)
 
         # write new aggregated data
         data['instances'] = harmonized_instances
-        with open(self.release_name + '_aggregated.json', 'w') as outfile:
-            json.dump(data, outfile, sort_keys=True, indent=4)
+        if self.args.generate_json:
+            with open(self.release_name + '_aggregated.json', 'w') as outfile:
+                json.dump(data, outfile, sort_keys=True, indent=4)
 
         # create csv, bugfix_count and matrix at the end
         # make sure the BUGFIX_count and issue matrix are at the end
-        header = ['file'] + keys
+        header = keys
         header.remove('BUGFIX_count')
         for issue in bug_fixes.values():
             if type(issue) == set:
@@ -372,5 +375,6 @@ if __name__ == '__main__':
     parser.add_argument('-rn', '--release-name', help='Name of the release to be mined.', required=True)
     parser.add_argument('-tr', '--release-commit', help='Target release.', required=True)
     parser.add_argument('-ll', '--log-level', help='Log level for stdout (DEBUG, INFO), default INFO', default='INFO')
+    parser.add_argument('-gs', '--generate-json', help='Set if additional JSON files should be generated.', default=False)
 
     main(parser.parse_args())
