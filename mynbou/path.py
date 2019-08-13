@@ -17,7 +17,9 @@ import networkx as nx
 from Levenshtein import distance
 from dateutil.relativedelta import relativedelta
 
-from pycoshark.mongomodels import Commit, CodeEntityState, FileAction, File, Issue, Hunk, Refactoring, CommitChanges, People
+from pycoshark.mongomodels import Commit, CodeEntityState, FileAction, File, Issue, Hunk, Refactoring, CommitChanges
+from pycoshark.utils import java_filename_filter
+
 from bson.objectid import ObjectId
 from mynbou.constants import *
 
@@ -131,8 +133,9 @@ class Volg(object):
         # get release files
         c = Commit.objects.get(vcs_system_id=vcs.id, revision_hash=target_release_hash)
         for ces in CodeEntityState.objects.filter(id__in=c.code_entity_states, ce_type='file', long_name__endswith='.java'):
-            self._release_files.append(ces.long_name)
-            self._change_metrics[ces.long_name] = copy.deepcopy(self._init_metrics)
+            if java_filename_filter(ces.long_name, production_only=True):
+                self._release_files.append(ces.long_name)
+                self._change_metrics[ces.long_name] = copy.deepcopy(self._init_metrics)
 
         # and release date
         self._release_date = c.committer_date
@@ -194,7 +197,7 @@ class Volg(object):
                 # load bug_inducing FileAction
                 for ifa in FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JLMIV++'}):
 
-                    bc = Commit.objects.get(id=ifa.commit_id)      #(id=ifa.commit_id).only('revision_hash', 'id', 'fixed_issue_ids').get()
+                    bc = Commit.objects.get(id=ifa.commit_id)
                     blame_commit = bc.revision_hash
                     blame_file = File.objects.get(id=ifa.file_id).path
 
@@ -465,6 +468,33 @@ class Volg(object):
                 added_files.append(new_file)
         return true_renames, added_files
 
+    def _first_occured_fallback(self, vcs, file_name):
+
+        needle = file_name
+
+        for c in Commit.objects.filter(vcs_system_id=vcs.id).order_by('-committer_date', '-author_date').only('id', 'revision_hash', 'parents', 'committer_date'):
+
+            if not nx.has_path(self._graph, c.revision_hash, self._target_release_hash):
+                continue
+
+            # merge commits are allowd in fallback mode
+            # if len(c.parents) > 1:
+            #    continue
+
+            for fa in FileAction.objects.filter(commit_id=c.id, mode__in=['A', 'C']):
+                f = File.objects.get(id=fa.file_id)
+                if f.path == needle:
+                    return c.committer_date
+
+            true_renames, false_renames = self._heuristic_renames(c)
+            for old_file, new_file in true_renames:
+                if needle == new_file:
+                    needle = old_file
+
+            for new_file in false_renames:
+                if new_file == needle:
+                    return c.committer_date
+
     def first_occured(self, vcs, paths, release_files):
         """Traverse all FileActions of all paths to find when which file was added.
 
@@ -480,7 +510,7 @@ class Volg(object):
         for release_file in release_files:
             aliases[release_file] = release_file
 
-        for c in Commit.objects.filter(vcs_system_id=vcs.id).order_by('-committer_date','-author_date').only('id', 'revision_hash', 'parents', 'committer_date'):
+        for c in Commit.objects.filter(vcs_system_id=vcs.id).order_by('-committer_date', '-author_date').only('id', 'revision_hash', 'parents', 'committer_date'):
 
             revision_hash = c.revision_hash
             if not nx.has_path(self._graph, c.revision_hash, self._target_release_hash):
@@ -493,8 +523,9 @@ class Volg(object):
 
             for old_file, new_file in true_renames:
                 if old_file in aliases.keys() and new_file in aliases.keys() and aliases[old_file] != aliases[new_file]:
-                    self._log.warning('[{}] would overwrite target {} of alias {} with target {}, creating fake addition of the target'.format(revision_hash, aliases[old_file], old_file, aliases[new_file]))
-                    false_renames.append(aliases[new_file])
+                    self._log.warning('[{}] would overwrite target {} of alias {} with target {}, creating fake addition of the target, skipping'.format(revision_hash, aliases[old_file], old_file, aliases[new_file]))
+                    # test with fallback
+                    # false_renames.append(aliases[new_file])
                     continue
 
                 # if the file is in our release files (directly)
@@ -536,6 +567,14 @@ class Volg(object):
 
         first_occurences = {}
         for file_name, add_dates in ret.items():
-            first_occurences[file_name] = max(add_dates)  # if we have multiple possible addition dates we use the max
+
+            if file_name not in first_occurences.keys():
+                fb_date = self._first_occured_fallback(vcs, file_name)
+                if not fb_date:
+                    raise Exception('no date found for: {}'.format(file_name))
+                first_occurences[file_name] = fb_date
+            else:
+                first_occurences[file_name] = max(add_dates)  # usually, if we have multiple possible addition dates we use the max
+                # as we need to include the merge commits we use the minimum as the merge commit
 
         return first_occurences, aliases, file_name_changes
