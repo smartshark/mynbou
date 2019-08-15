@@ -303,22 +303,20 @@ class SmartsharkPlugin(object):
         cleaned_instances = self._clean_instances(instances)
         data = {'release_date': release_information['release_date'],
                 'instances': cleaned_instances}
-        if self.args.generate_json != "False":
-            with open(self.release_name + '.json', 'w') as outfile:
-                json.dump(data, outfile, sort_keys=True, indent=4)
+        with open(self.release_name + '.json', 'w') as outfile:
+            json.dump(data, outfile, sort_keys=True, indent=4)
 
         # information about bug_fixes written to extra file
         bug_info = self._bug_info(cleaned_instances)
-        if self.args.generate_json != "False":
-            with open(self.release_name + '_bug_fixes.json', 'w') as outfile:
-                json.dump(bug_info, outfile, sort_keys=True, indent=4)
+        with open(self.release_name + '_bug_fixes.json', 'w') as outfile:
+            json.dump(bug_info, outfile, sort_keys=True, indent=4)
 
         # harmonize instances and get keys from harmonization, they are later used to provide a header for the csv file
         harmonized_instances, bug_fixes, keys = self._harmonize_instances(cleaned_instances)
 
         # write new aggregated data
         data['instances'] = harmonized_instances
-        if self.args.generate_json != "False":
+        if self.args.generate_json.lower() != "false":
             with open(self.release_name + '_aggregated.json', 'w') as outfile:
                 json.dump(data, outfile, sort_keys=True, indent=4)
 
@@ -375,6 +373,6 @@ if __name__ == '__main__':
     parser.add_argument('-rn', '--release-name', help='Name of the release to be mined.', required=True)
     parser.add_argument('-tr', '--release-commit', help='Target release.', required=True)
     parser.add_argument('-ll', '--log-level', help='Log level for stdout (DEBUG, INFO), default INFO', default='INFO')
-    parser.add_argument('-gs', '--generate-json', help='Indicate if additional JSON files should be generated (True, False).', default='False')
+    parser.add_argument('-gs', '--generate-json', help='Indicate if an additional aggregated JSON file should be generated (True, False).', default='False')
 
     main(parser.parse_args())
