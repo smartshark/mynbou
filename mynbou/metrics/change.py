@@ -123,7 +123,8 @@ def hassan(instances, window_size_days=14, phi1=1, phi2=1, phi3=1):
 
             # IMPORTANT: if only one file is changed in the given date range we would have log to the base of 1
             # as this is an entropy based formula we set it to 0
-            if n_bar > 1:
+            # same as when 0 lines are changed
+            if n_bar > 1 and all_changed_lines > 0:
                 p = sum(dat['changed_lines']) / all_changed_lines
                 if p > 0:
                     ase.append(-p * math.log(p, n_bar))
@@ -139,7 +140,9 @@ def hassan(instances, window_size_days=14, phi1=1, phi2=1, phi3=1):
             # the number of changes we can get by looking at the length of the changed_lines list
             if file not in whcm.keys():
                 whcm[file] = []
-            whcm[file].append((sum(dat['changed_lines']) / all_changed_lines) * msum(sorted(ase)))
+            
+            if all_changed_lines > 0:
+                whcm[file].append((sum(dat['changed_lines']) / all_changed_lines) * msum(sorted(ase)))
 
     # now get the real values for the decay of the files from our pre-filled hcm list
     ldhcm = {}

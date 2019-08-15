@@ -565,13 +565,13 @@ class Volg(object):
                 ret[aliases[file_name]] = []
             ret[aliases[file_name]] += add_dates
 
+        # added files contains all files but we only need release files so we only trigger the fallback for release files
         for file_name in release_files:
             if file_name not in ret:
                 ret[file_name] = [self._first_occured_fallback(vcs, file_name)]
 
         first_occurences = {}
         for file_name, add_dates in ret.items():
-            first_occurences[file_name] = max(add_dates)  # usually, if we have multiple possible addition dates we use the max
-                # as we need to include the merge commits we use the minimum as the merge commit
+            first_occurences[file_name] = max(add_dates)  # if we have multiple possible addition dates we use the max
 
         return first_occurences, aliases, file_name_changes
