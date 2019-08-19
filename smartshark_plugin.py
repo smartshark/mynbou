@@ -299,6 +299,9 @@ class SmartsharkPlugin(object):
         m = Mynbou(self.vcs, self.args.project_name, release)
         instances, release_information = m.release()
 
+        if not instances:
+            raise Exception('No instances extracted for this release')
+
         # write full file with only cleaned instances
         cleaned_instances = self._clean_instances(instances)
         data = {'release_date': release_information['release_date'],

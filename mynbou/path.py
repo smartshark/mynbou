@@ -36,6 +36,9 @@ class OntdekBaan(object):
         paths = {0: [source]}
         visited = set()
 
+        if source not in self._graph:
+            raise Exception('Commit {} is not contained in the commit graph'.format(source))
+
         queue = deque([(source, predecessors(source))])
         while queue:
             parent, children = queue[0]
