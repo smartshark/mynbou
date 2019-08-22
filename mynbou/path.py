@@ -18,7 +18,7 @@ from Levenshtein import distance
 from dateutil.relativedelta import relativedelta
 
 from pycoshark.mongomodels import Commit, CodeEntityState, FileAction, File, Issue, Hunk, Refactoring, CommitChanges
-from pycoshark.utils import java_filename_filter
+from pycoshark.utils import java_filename_filter, jira_is_resolved_and_fixed
 
 from bson.objectid import ObjectId
 from mynbou.constants import *
@@ -177,80 +177,84 @@ class Volg(object):
 
         - uses commit label: validated_bugfix
         - uses issues from: fixed_issue_ids (manually validated links from commit to issue)
-        - uses inducing label: JLMIV++ (Jira Links Manual(JLM), Issue Validation(IV), only java files(+), skip comments and empty spaces in blame(+))
+        - uses inducing label: JLMIV+ (Jira Links Manual(JLM), Issue Validation(IV), only java files(+), skip comments and empty spaces in blame(+))
+
+        ALL inducing commits of ALL bug fixing commits MUST have a path to the release.
+        The only exceptions are partial fixes when the inducing commit without a path to the release is a bug fixing commit for the same issue.
         """
         buginducing_commits = {}
+        skipped_issues = set()
+        all_fixed_issues = set()
 
-        for bugfix_commit in Commit.objects.filter(vcs_system_id=self._vcs.id, labels__validated_bugfix=True, committer_date__gt=self._release_date, parents__1__exists=False, fixed_issue_ids__0__exists=True).only('revision_hash', 'id', 'fixed_issue_ids', 'committer_date').timeout(False):
+        for commit in Commit.objects.filter(vcs_system_id=self._vcs.id, committer_date__gt=self._release_date, labels__validated_bugfix=True, fixed_issue_ids__0__exists=True).only('id', 'committer_date', 'fixed_issue_ids', 'revision_hash').timeout(False):
+            for issue in Issue.objects.filter(id__in=commit.fixed_issue_ids):
+                if issue.issue_type_verified and issue.issue_type_verified.lower() == "bug" and jira_is_resolved_and_fixed(issue):
+                    all_fixed_issues.add(issue)
 
-            # first pass: collect everything, do not delete anything
-            # second pass: delete everything for fixes with only one commit where at least one of the fileactions were after the release date
-            # ćount only left over fileactions which are before the release date
+        for issue in all_fixed_issues:
+            inducings_have_path = True
+            blame_commits = []
 
-            for fa in FileAction.objects.filter(commit_id=bugfix_commit.id, mode='M'):
-                f = File.objects.get(id=fa.file_id)
+            for bugfix_commit in Commit.objects.filter(fixed_issue_ids=issue.id).only('revision_hash', 'id', 'fixed_issue_ids', 'committer_date').timeout(False):
 
-                # skip if we are not interested in the file?
-                if f.path not in self._aliases.keys():
-                    continue
+                for fa in FileAction.objects.filter(commit_id=bugfix_commit.id, mode='M'):
 
-                inducings_have_path = True
-                blame_commits = []
+                    # load bug_inducing FileActions
+                    for ifa in FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JLMIV+'}):
 
-                # load bug_inducing FileAction
-                for ifa in FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JLMIV++'}):
+                        # still need to fetch the correct one
+                        for ind in ifa.induces:
+                            if ind['change_file_action_id'] == fa.id and ind['label'] == 'JLMIV+' and ind['szz_type'] != 'hard_suspect':
 
-                    bc = Commit.objects.get(id=ifa.commit_id)
-                    blame_commit = bc.revision_hash
-                    blame_file = File.objects.get(id=ifa.file_id).path
+                                bc = Commit.objects.get(id=ifa.commit_id)
+                                blame_commit = bc.revision_hash
+                                blame_file = File.objects.get(id=ifa.file_id).path
 
-                    # skip if we are not interested in the file?
-                    if blame_file not in self._aliases.keys():
-                        continue
+                                blame_id = '{}_{}'.format(blame_commit, issue.external_id)
 
-                    # if this inducing commit has no path to our release we skip it altogether
-                    if not nx.has_path(self._graph, blame_commit, self._target_release_hash):
-                        inducings_have_path = False
+                                blame_commits.append(blame_id)
 
-                    # EXCEPT if it is an inducing to a bugfix commit for the same issue (partial fix) in that case we include the inducing links that lead to the release (not the others)
-                    multi_commit_issue = set(bugfix_commit.fixed_issue_ids).issubset(set(bc.fixed_issue_ids))
+                                # if this inducing commit has no path to our release we skip it altogether
+                                if not nx.has_path(self._graph, blame_commit, self._target_release_hash):
+                                    if bc.fixed_issue_ids is None or issue.id not in bc.fixed_issue_ids:
+                                        inducings_have_path = False
+                                        self._log.debug('[{}] has no path to release, skipping issue: {}'.format(blame_commit, issue.external_id))
+                                else:
+                                    # skip if we are not interested in the blame_file (because it does not point to a release file)
+                                    if blame_file not in self._aliases.keys():
+                                        if java_filename_filter(blame_file, production_only=True):
+                                            self._log.warning('[{}] {} not in release files or aliases {}, skipping issues: {}'.format(blame_commit, blame_file, self._aliases.keys(), issue.external_id))
+                                        skipped_issues.add(issue.external_id)
+                                        continue
 
-                    # if we are on a multi_commit_issue and do not have a path we skip this blame commit but do not delete others
-                    if multi_commit_issue and not inducings_have_path:
-                        inducings_have_path = True
-                        continue
+                                    if blame_id not in buginducing_commits.keys():
+                                        buginducing_commits[blame_id] = {}
 
-                    blame_commits.append(blame_commit)
+                                    if blame_file not in buginducing_commits[blame_id].keys():
+                                        buginducing_commits[blame_id][blame_file] = []
 
-                    for ind in ifa.induces:
+                                    buginducing_commits[blame_id][blame_file].append((issue.external_id, str(bugfix_commit.committer_date), bugfix_commit.revision_hash, str(issue.priority).lower(), str(issue.issue_type_verified).lower(), str(issue.created_at)))
 
-                        if ind['change_file_action_id'] == fa.id and ind['label'] == 'JLMIV++' and ind['szz_type'] != 'hard_suspect':
-
-                            if blame_commit not in buginducing_commits.keys():
-                                buginducing_commits[blame_commit] = {}
-
-                            if blame_file not in buginducing_commits[blame_commit].keys():
-                                buginducing_commits[blame_commit][blame_file] = []
-
-                            for issue_id in bugfix_commit.fixed_issue_ids:
-                                i = Issue.objects.get(id=issue_id)
-                                buginducing_commits[blame_commit][blame_file].append((i.external_id, str(bugfix_commit.committer_date), bugfix_commit.revision_hash, str(i.priority).lower(), str(i.issue_type).lower(), str(i.created_at)))
-
-                # not every blame commit has a path to the release
-                # we need to remove all of them in this case
-                if not inducings_have_path:
-                    for blame_commit in blame_commits:
-                        if blame_commit in buginducing_commits.keys():  # may not be present because its a hard_suspect
-                            del buginducing_commits[blame_commit]
+            # not every blame commit has a path to the release
+            # we need to remove all of them in this case
+            if not inducings_have_path:
+                skipped_issues.add(issue.external_id)
+                for blame_id in blame_commits:
+                    if blame_id in buginducing_commits.keys():  # may not be present because its a hard_suspect
+                        self._log.debug('[{}] found inducing commits wihtout path, deleting issue {}'.format(blame_id.split('_')[0], blame_id.split('_')[1]))
+                        del buginducing_commits[blame_id]
         ret_issues = {}
         for blame_commit, values in buginducing_commits.items():
             for file, issues in values.items():
                 release_file = self._aliases[file]
                 if release_file not in ret_issues.keys():
                     ret_issues[release_file] = []
-                for issue in issues:
-                    if issue not in ret_issues[release_file]:
-                        ret_issues[release_file].append(issue)
+                for i in issues:
+                    if i not in ret_issues[release_file]:
+                        ret_issues[release_file].append(i)
+                        self._log.debug('adding issue {} to file {}'.format(i[0], release_file))
+                        if i[0] in skipped_issues:
+                            skipped_issues.remove(i[0])
         return ret_issues
 
     def _add_change_metrics(self, file, fa, commit):

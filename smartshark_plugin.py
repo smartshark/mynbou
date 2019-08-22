@@ -23,14 +23,14 @@ from mynbou import aggregation
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
-#i = logging.StreamHandler(sys.stdout)
-#e = logging.StreamHandler(sys.stderr)
+i = logging.StreamHandler(sys.stdout)
+e = logging.StreamHandler(sys.stderr)
 
-#i.setLevel(logging.DEBUG)
-#e.setLevel(logging.ERROR)
+i.setLevel(logging.INFO)
+e.setLevel(logging.ERROR)
 
-#log.addHandler(i)
-#log.addHandler(e)
+log.addHandler(i)
+log.addHandler(e)
 
 
 class SmartsharkPlugin(object):
@@ -235,6 +235,8 @@ class SmartsharkPlugin(object):
                 keys.append(key + '_shannon_entropy')
                 keys.append(key + '_generalized_entropy')
                 keys.append(key + '_theil')
+            else:
+                keys.append(key)
 
         # build PMD keys for abbrevs and also for severities
         for key in PMD_RMATCH.keys():
@@ -242,7 +244,11 @@ class SmartsharkPlugin(object):
             keys.append('_'.join(tmp[:-1]) + '_' + tmp[-1].lower())
 
         for key in list(set(PMD_RMATCH.values())):
-            keys.append('PMD_' + key.lower())
+            keys.append('PMD_severity_' + key.lower())
+
+        # PMD rule types
+        for key in PMD_RULE_TYPES:
+            keys.append('PMD_rule_type_' + key.lower())
 
         # commit change tpye
         for change_type in CHANGE_TYPES:
@@ -264,8 +270,10 @@ class SmartsharkPlugin(object):
 
         # we also add keys present in every instance (change, bug_fix, etc.)
         # this allows us to add this without having extra definitions for these
+        # print('aggregated keys', aggregated_instances[0].keys())
         for key in aggregated_instances[0].keys():
             if key not in keys:
+                # print('adding', key)
                 keys.append(key)
 
         # filter our keys for stuff we do not want in aggregated but exist in every instance
@@ -325,7 +333,7 @@ class SmartsharkPlugin(object):
 
         # create csv, bugfix_count and matrix at the end
         # make sure the BUGFIX_count and issue matrix are at the end
-        header = keys
+        header = sorted(keys)
         header.remove('BUGFIX_count')
         for issue in bug_fixes.values():
             if type(issue) == set:
@@ -342,9 +350,11 @@ class SmartsharkPlugin(object):
         for issue in bug_fixes.values():
             if type(issue) == set:
                 for i in issue:
-                    header.append(i)
+                    if i not in header:
+                        header.append(i)
             else:
-                header.append(issue)
+                if i not in header:
+                    header.append(issue)
 
         with open(self.release_name + '_aggregated.csv', 'w') as outfile:
             outfile.write(';'.join(header) + '\n')
