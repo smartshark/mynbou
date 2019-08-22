@@ -56,7 +56,10 @@
                     "id": "is1",
                     "issue_system_id": "{iss1}",
                     "external_id": "IS-1",
-                    "title": "test fix 1"
+                    "title": "test fix 1",
+                    "issue_type_verified": "bug",
+                    "resolution": "fixed",
+                    "status": "closed"
                 }
             ]
         },
@@ -153,7 +156,7 @@
                     "mode": "A",
                     "lines_added": 3,
                     "lines_deleted": 0,
-                    "induces": [{"change_file_action_id": "DUMMY1", "label": "JLMIV++", "szz_type": "inducing"}]
+                    "induces": [{"change_file_action_id": "DUMMY1", "label": "JLMIV+", "szz_type": "inducing"}]
                 },
                 {
                     "id": "fileaction3",
@@ -204,7 +207,7 @@
                     "mode": "M",
                     "lines_added": 3,
                     "lines_deleted": 2,
-                    "induces": [{"change_file_action_id": "DUMMY2", "label": "JLMIV++", "szz_type": "partial_fix"}]
+                    "induces": [{"change_file_action_id": "DUMMY2", "label": "JLMIV+", "szz_type": "partial_fix"}]
                 },
                 {
                     "id": "fileaction8",
