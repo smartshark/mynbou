@@ -23,14 +23,14 @@ from mynbou import aggregation
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
-i = logging.StreamHandler(sys.stdout)
-e = logging.StreamHandler(sys.stderr)
+# i = logging.StreamHandler(sys.stdout)
+# e = logging.StreamHandler(sys.stderr)
 
-i.setLevel(logging.INFO)
-e.setLevel(logging.ERROR)
+# i.setLevel(logging.INFO)
+# e.setLevel(logging.ERROR)
 
-log.addHandler(i)
-log.addHandler(e)
+# log.addHandler(i)
+# log.addHandler(e)
 
 
 class SmartsharkPlugin(object):
@@ -334,6 +334,7 @@ class SmartsharkPlugin(object):
         # create csv, bugfix_count and matrix at the end
         # make sure the BUGFIX_count and issue matrix are at the end
         header = sorted(keys)
+        header.remove('file')
         header.remove('BUGFIX_count')
         for issue in bug_fixes.values():
             if type(issue) == set:
@@ -346,6 +347,7 @@ class SmartsharkPlugin(object):
                 else:
                     print(issue, 'not found')
 
+        header = ['file'] + header
         header.append('BUGFIX_count')
         for issue in bug_fixes.values():
             if type(issue) == set:
