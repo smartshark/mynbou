@@ -333,7 +333,7 @@ class SmartsharkPlugin(object):
 
         # create csv, bugfix_count and matrix at the end
         # make sure the BUGFIX_count and issue matrix are at the end
-        header = sorted(keys)
+        header = sorted(list(set(keys)))
         header.remove('file')
         header.remove('BUGFIX_count')
         for issue in bug_fixes.values():
@@ -344,8 +344,6 @@ class SmartsharkPlugin(object):
             else:
                 if issue in header:
                     header.remove(issue)
-                else:
-                    print(issue, 'not found')
 
         header = ['file'] + header
         header.append('BUGFIX_count')
