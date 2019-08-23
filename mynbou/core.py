@@ -126,13 +126,14 @@ class Mynbou(object):
             if not package_name:
                 continue
 
-            # fetch package for our package_name, thorw error if not exactly one is found
+            # fetch package for our package_name, throw error if not exactly one is found
             cgs = CodeGroupState.objects.get(commit_id=commit.id, cg_type='package', long_name=package_name)
             for k, v in cgs.metrics.items():
                 if k in IGNORE_PACKAGE_METRICS:
                     continue
                 if k.endswith(' Rules'):
-                    metrics['PMD_package_{}'.format(k.lower())] = v
+                    pass
+                    # metrics['PMD_package_{}'.format(k.lower())] = v
                 else:
                     metrics['SM_package_{}'.format(k.lower())] = v
         return metrics
