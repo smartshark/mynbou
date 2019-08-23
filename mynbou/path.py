@@ -195,7 +195,7 @@ class Volg(object):
             inducings_have_path = True
             blame_commits = []
 
-            for bugfix_commit in Commit.objects.filter(fixed_issue_ids=issue.id).only('revision_hash', 'id', 'fixed_issue_ids', 'committer_date').timeout(False):
+            for bugfix_commit in Commit.objects.filter(vcs_system_id=self._vcs.id, fixed_issue_ids=issue.id, committer_date__gt=self._release_date).only('revision_hash', 'id', 'fixed_issue_ids', 'committer_date').timeout(False):
 
                 for fa in FileAction.objects.filter(commit_id=bugfix_commit.id, mode='M'):
 
@@ -223,7 +223,7 @@ class Volg(object):
                                     # skip if we are not interested in the blame_file (because it does not point to a release file)
                                     if blame_file not in self._aliases.keys():
                                         if java_filename_filter(blame_file, production_only=True):
-                                            self._log.warning('[{}] {} not in release files or aliases {}, skipping issues: {}'.format(blame_commit, blame_file, self._aliases.keys(), issue.external_id))
+                                            self._log.debug('[{}] {} not in release files or aliases {}, skipping issues: {}'.format(blame_commit, blame_file, self._aliases.keys(), issue.external_id))
                                         skipped_issues.add(issue.external_id)
                                         continue
 
