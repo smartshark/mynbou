@@ -139,10 +139,10 @@ class SmartsharkPlugin(object):
 
                 elif k.startswith(('SM_method', 'SM_interface', 'SM_enum', 'SM_class', 'SM_annotation')):  # and isinstance(v, list):  # everything in ce_type file is not a list because we only have one
 
-                    if isinstance(v) != list:
-                        v2 = [v]
-                    else:
+                    if isinstance(v, list):
                         v2 = v
+                    else:
+                        v2 = [v]
                     # special aggregations for method level to file level
                     # if k.startswith('SM_method'):
                     for value in v2:
