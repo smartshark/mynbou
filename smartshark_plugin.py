@@ -221,7 +221,7 @@ class SmartsharkPlugin(object):
             if key in ['SM_method_hcpl', 'SM_method_heff', 'SM_method_htrp', 'SM_method_hvol', 'SM_method_hndb']:
                 continue
 
-            if key.startswith(('SM_method', 'SM_interface', 'SM_enum', 'SM_class')):
+            if key.startswith(('SM_method', 'SM_interface', 'SM_enum', 'SM_class', 'SM_annotation')):
                 keys.append(key + '_sum')
                 keys.append(key + '_min')
                 keys.append(key + '_max')
