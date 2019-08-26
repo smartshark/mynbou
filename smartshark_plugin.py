@@ -137,17 +137,21 @@ class SmartsharkPlugin(object):
                                 inst[change_name] = 0
                             inst[change_name] += change_count
 
-                elif k.startswith('SM') and isinstance(v, list):  # everything in ce_type file is not a list because we only have one
+                elif k.startswith(('SM_method', 'SM_interface', 'SM_enum', 'SM_class', 'SM_annotation')):  # and isinstance(v, list):  # everything in ce_type file is not a list because we only have one
 
+                    if isinstance(v) != list:
+                        v2 = [v]
+                    else:
+                        v2 = v
                     # special aggregations for method level to file level
                     # if k.startswith('SM_method'):
-                    for value in v:
+                    for value in v2:
                         if math.isnan(value):
                             self._log.error('value is NaN for {} in file {}'.format(k, instance['file']))
-                    inst[k + '_sum'] = sum(v)
-                    inst[k + '_min'] = min(v)
-                    inst[k + '_max'] = max(v)
-                    inst[k + '_avg'] = sum(v) / len(v)  # we only have this k if we have at least one element in the list
+                    inst[k + '_sum'] = sum(v2)
+                    inst[k + '_min'] = min(v2)
+                    inst[k + '_max'] = max(v2)
+                    inst[k + '_avg'] = sum(v2) / len(v2)  # we only have this k if we have at least one element in the list
                     inst[k + '_median'] = 0
                     inst[k + '_stdev'] = 0
                     inst[k + '_coefficient_of_variation'] = 0
@@ -157,16 +161,16 @@ class SmartsharkPlugin(object):
                     inst[k + '_shannon_entropy'] = 0
                     inst[k + '_generalized_entropy'] = 0
                     inst[k + '_theil'] = 0
-                    if len(v) > 0:
-                        inst[k + '_median'] = aggregation.median(v)
-                        inst[k + '_stdev'] = aggregation.stddev(v)
-                        inst[k + '_coefficient_of_variation'] = aggregation.cov(v)
-                        inst[k + '_gini'] = aggregation.gini(v)
-                        inst[k + '_hoover'] = aggregation.hoover(v)
-                        inst[k + '_atkinson'] = aggregation.atkinson(v)
-                        inst[k + '_shannon_entropy'] = aggregation.shannon_entropy(v)
-                        inst[k + '_generalized_entropy'] = aggregation.generalized_entropy(v)
-                        inst[k + '_theil'] = aggregation.theil(v)
+                    if len(v2) > 0:
+                        inst[k + '_median'] = aggregation.median(v2)
+                        inst[k + '_stdev'] = aggregation.stddev(v2)
+                        inst[k + '_coefficient_of_variation'] = aggregation.cov(v2)
+                        inst[k + '_gini'] = aggregation.gini(v2)
+                        inst[k + '_hoover'] = aggregation.hoover(v2)
+                        inst[k + '_atkinson'] = aggregation.atkinson(v2)
+                        inst[k + '_shannon_entropy'] = aggregation.shannon_entropy(v2)
+                        inst[k + '_generalized_entropy'] = aggregation.generalized_entropy(v2)
+                        inst[k + '_theil'] = aggregation.theil(v2)
 
                 # collect severities
                 elif k.startswith('PMD') and not k.startswith('PMD_severity_') and not k.startswith('PMD_rule_type_') and not k.startswith('PMD_package'):
