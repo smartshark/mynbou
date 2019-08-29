@@ -201,7 +201,7 @@ class SmartsharkPlugin(object):
                     # make this unique quickly per file
                     linked_issues = set()
                     for i in v:
-                        linked_issues.add('{}_{}_{}'.format(i.priority, i.issue_type, i.external_id))
+                        linked_issues.add('{}_{}_{}'.format(i['priority'], i['issue_type'], i['external_id']))
 
                     for issue in linked_issues:  # we only count each issue once
                         issue_severity, issue_type, issue_id = issue.split('_')
