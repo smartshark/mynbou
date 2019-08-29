@@ -260,7 +260,7 @@ class Volg(object):
     def _add_linked_issues(self, file, commit):
         for issue_id in commit.linked_issue_ids:
             i = Issue.objects.get(id=issue_id)
-            self._change_metrics[file]['linked_issues'].append('{}_{}_{}'.format(i.priority, i.issue_type, i.external_id))
+            self._change_metrics[file]['linked_issues'].append({'external_id': i.external_id, 'priority': i.priority, 'issue_type': i.issue_type})
 
     def _add_change_metrics(self, file, fa, commit):
         """Add change metrics to our current batch.

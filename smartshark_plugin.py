@@ -197,7 +197,13 @@ class SmartsharkPlugin(object):
                     inst['_'.join(tmp[0:-1]) + '_' + tmp[-1].lower()] = v
 
                 elif k == 'linked_issues':
-                    for issue in set(v):  # we only count each issue once
+
+                    # make this unique quickly per file
+                    linked_issues = set()
+                    for i in v:
+                        linked_issues.add('{}_{}_{}'.format(i.priority, i.issue_type, i.external_id))
+
+                    for issue in linked_issues:  # we only count each issue once
                         issue_severity, issue_type, issue_id = issue.split('_')
 
                         itype = str(issue_type).lower().strip()
