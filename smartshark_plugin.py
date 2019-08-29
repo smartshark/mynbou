@@ -275,7 +275,7 @@ class SmartsharkPlugin(object):
 
         # ticket severities
         for key in TICKET_SEVERITIES + ['other']:
-            for key2 in set(TICKET_TYPE_MAPPING.values()).union(set(['other'])):
+            for key2 in set(TICKET_TYPE_MAPPING.values()):
                 keys.append('ISSUE_{}_{}'.format(key.lower(), key2.lower()))
 
         # java node types (we should have these for every file)
