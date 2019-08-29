@@ -214,7 +214,7 @@ class SmartsharkPlugin(object):
 
                         iseverity = str(issue_severity).lower().strip()
                         if iseverity not in TICKET_SEVERITIES:
-                            iseverity = 'none'
+                            iseverity = 'other'
 
                         key = 'ISSUE_{}_{}'.format(iseverity, itype)
                         if key not in inst.keys():
@@ -274,8 +274,8 @@ class SmartsharkPlugin(object):
             keys.append('REFACTOR_{}'.format(key))
 
         # ticket severities
-        for key in TICKET_SEVERITIES + ['none']:
-            for key2 in set(TICKET_TYPE_MAPPING.values()).union(set(['none'])):
+        for key in TICKET_SEVERITIES + ['other']:
+            for key2 in set(TICKET_TYPE_MAPPING.values()).union(set(['other'])):
                 keys.append('ISSUE_{}_{}'.format(key.lower(), key2.lower()))
 
         # java node types (we should have these for every file)
