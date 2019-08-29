@@ -257,6 +257,11 @@ class Volg(object):
                             skipped_issues.remove(i[0])
         return ret_issues
 
+    def _add_linked_issues(self, file, commit):
+        for issue_id in commit.linked_issue_ids:
+            i = Issue.objects.get(id=issue_id)
+            self._change_metrics[file]['linked_issues'].append('{}_{}_{}'.format(i.priority, i.issue_type, i.external_id))
+
     def _add_change_metrics(self, file, fa, commit):
         """Add change metrics to our current batch.
 
@@ -415,7 +420,7 @@ class Volg(object):
                     if f.path not in self._aliases.keys():
                         continue
 
-                    # self._add_linked_issues(c)
+                    self._add_linked_issues(self._aliases[f.path], c)
                     self._add_change_metrics(self._aliases[f.path], fa, c)
                     self._add_refactorings(c)
 

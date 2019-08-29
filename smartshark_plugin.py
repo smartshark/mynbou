@@ -104,7 +104,8 @@ class SmartsharkPlugin(object):
                     latest_bugfix = {}
                     for prei in v:
                         if prei[0] not in latest_bugfix.keys():
-                            latest_bugfix[prei[0]] = [prei[1]]
+                            latest_bugfix[prei[0]] = []
+                        latest_bugfix[prei[0]].append(prei[1])
 
                     inst['BUGFIX_issues'] = []
                     unique_ids = set()
@@ -196,17 +197,20 @@ class SmartsharkPlugin(object):
                     inst['_'.join(tmp[0:-1]) + '_' + tmp[-1].lower()] = v
 
                 elif k == 'linked_issues':
-                    for issue in v:
-                        if 'severity' not in issue.keys():
-                            print(issue)
+                    for issue in set(v):  # we only count each issue once
+                        issue_severity, issue_type, issue_id = issue.split('_')
 
-                        itype = issue['type'].lower().strip()
+                        itype = str(issue_type).lower().strip()
                         if itype in TICKET_TYPE_MAPPING.keys():
                             itype = TICKET_TYPE_MAPPING[itype]
                         else:
                             itype = 'other'
 
-                        key = 'ISSUE_{}_{}'.format(str(issue['severity']).lower(), str(issue['type']).lower())
+                        iseverity = str(issue_severity).lower().strip()
+                        if iseverity not in TICKET_SEVERITIES:
+                            iseverity = 'none'
+
+                        key = 'ISSUE_{}_{}'.format(iseverity, itype)
                         if key not in inst.keys():
                             inst[key] = 0
                         inst[key] += 1

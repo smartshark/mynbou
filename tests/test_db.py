@@ -115,7 +115,6 @@ class TestDatabase(unittest.TestCase):
         m = Mynbou(vcs, project_name, release)
         instances, release_information = m.release()
 
-        print(instances['B/B.java']['bug_fixes'])
         # File B/B.java has a bugfix even if it was introduced when its name was still D/D.java
         self.assertEqual(instances['B/B.java']['bug_fixes'][0][0], 'IS-1')
 
