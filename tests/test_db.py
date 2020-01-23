@@ -104,16 +104,16 @@ class TestDatabase(unittest.TestCase):
 
         c1 = Commit.objects.get(revision_hash="hash1")
         fa1 = FileAction.objects.get(commit_id=c1.id, file_id=f1.id)
-        fa1.induces = [{"change_file_action_id": bugfix_fa.id, "label": "JLMIV+", "szz_type": "inducing"}]
+        fa1.induces = [{"change_file_action_id": bugfix_fa.id, "label": "JLMIV+R", "szz_type": "inducing"}]
         fa1.save()
 
         fa2 = FileAction.objects.get(commit_id=c.id, file_id=f2.id)
-        fa2.induces = [{"change_file_action_id": bugfix_fa.id, "label": "JLMIV+", "szz_type": "partial_fix"}]
+        fa2.induces = [{"change_file_action_id": bugfix_fa.id, "label": "JLMIV+R", "szz_type": "partial_fix"}]
         fa2.save()
 
         vcs = VCSSystem.objects.get(url=url)
         m = Mynbou(vcs, project_name, release)
-        instances, release_information = m.release("JLMIV+")
+        instances, release_information = m.release("False")
 
         # File B/B.java has a bugfix even if it was introduced when its name was still D/D.java
         self.assertEqual(instances['B/B.java']['bug_fixes'][0][0], 'IS-1')
@@ -134,7 +134,7 @@ class TestDatabase(unittest.TestCase):
 
         vcs = VCSSystem.objects.get(url=url)
         m = Mynbou(vcs, project_name, release)
-        instances, release_information = m.release("JLMIV+")
+        instances, release_information = m.release("False")
 
         # in the fixtures B.java is twice renamed, nevertheless it should have the same first occurence as A.java which is never renamed
         # B.java is introduced as D.java and renamed first to C.java then to B.java
@@ -183,7 +183,7 @@ class TestDatabase(unittest.TestCase):
 
         vcs = VCSSystem.objects.get(url=url)
         m = Mynbou(vcs, project_name, release)
-        instances, release_information = m.release("JLMIV+")
+        instances, release_information = m.release("False")
 
         dambros = {}
         for file, values in instances.items():
@@ -303,7 +303,7 @@ class TestDatabase(unittest.TestCase):
 
         vcs = VCSSystem.objects.get(url=url)
         m = Mynbou(vcs, project_name, release)
-        instances, release_information = m.release("JLMIV+")
+        instances, release_information = m.release("False")
 
         hassan = {}
         moser = {}
