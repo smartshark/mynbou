@@ -18,7 +18,7 @@ from Levenshtein import distance
 from dateutil.relativedelta import relativedelta
 
 from pycoshark.mongomodels import Commit, CodeEntityState, FileAction, File, Issue, Hunk, Refactoring, CommitChanges
-from pycoshark.utils import java_filename_filter, jira_is_resolved_and_fixed
+from pycoshark.utils import java_filename_filter, jira_is_resolved_and_fixed, get_commit_graph, heuristic_renames
 
 from bson.objectid import ObjectId
 from mynbou.constants import *
@@ -140,6 +140,8 @@ class Volg(object):
                 self._release_files.append(ces.long_name)
                 self._change_metrics[ces.long_name] = copy.deepcopy(self._init_metrics)
 
+        self._release_commit = c
+
         # and release date
         self._release_date = c.committer_date
 
@@ -168,6 +170,167 @@ class Volg(object):
         o = OntdekBaan(graph)
         o.set_path(target_release_hash, 'backward', break_condition)
         return list(o.all_paths())
+
+    def calc_current_files(self, commit, release_commit, commit_graph, undirected_graph, rename_cache, current_files):
+        """determines the java files changed by a commit and returns them as a set"""
+        # current_files = set()
+        # for fileaction in FileAction.objects(commit_id=commit.id):
+        #     file = File.objects(id=fileaction.file_id).get()
+        #     if file.path not in current_files and java_filename_filter(file.path):
+        #         current_files.add(file.path)
+        
+        path_valid = nx.has_path(undirected_graph, release_commit.revision_hash, commit.revision_hash)
+        if path_valid:
+            path = nx.shortest_path(undirected_graph, release_commit.revision_hash, commit.revision_hash)
+            had_backward_edge = False
+            for i in range(len(path)-1, 0, -1): # going backwards
+                if path[i-1] in commit_graph.pred[path[i]]:
+                    if had_backward_edge:
+                        # invalid change of direction
+                        path_valid = False
+                        break
+                    if path[i] in rename_cache:
+                        renames = rename_cache[path[i]]
+                    else:
+                        renames = heuristic_renames(self._vcs.id, path[i])
+                        rename_cache[path[i]] = renames
+                    if renames is not None:
+                        for rename in renames[0]:
+                            if rename[1] in current_files:
+                                current_files.remove(rename[1])
+                                current_files.add(rename[0])
+                        for deletion in renames[1]:
+                            current_files.discard(deletion)
+                elif path[i-1] in commit_graph.succ[path[i]]:
+                    had_backward_edge = True
+                    if path[i-1] in rename_cache:
+                        renames = rename_cache[path[i-1]]
+                    else:
+                        renames = heuristic_renames(self._vcs.id, path[i-1])
+                        rename_cache[path[i-1]] = renames
+                    if renames is not None:
+                        for rename in renames[0]:
+                            if rename[0] in current_files:
+                                current_files.remove(rename[0])
+                                current_files.add(rename[1])
+        return current_files, path_valid
+
+    def issues_six_months_szz(self):
+        """basically looks six months into the future from the release and counts the defects that we can match
+
+        returns a dict, {filename: [list of issues]}
+        """
+
+        
+        files_release = self._release_files
+
+        commit_graph = get_commit_graph(self._vcs.id)
+        undirected_graph = commit_graph.to_undirected(as_view=True)
+        rename_cache = {}
+        delete_cache = {}
+
+        all_fixed_issues = set()
+        six_months = self._release_date + relativedelta(months=6)
+        for commit in Commit.objects.filter(vcs_system_id=self._vcs.id, committer_date__gt=self._release_date, committer_date__lt=six_months, labels__issueonly_bugfix=True, linked_issue_ids__0__exists=True).only('id', 'committer_date', 'linked_issue_ids', 'revision_hash').timeout(False):
+            for issue in Issue.objects.filter(id__in=commit.linked_issue_ids):
+                if str(issue.issue_type).lower() == "bug" and jira_is_resolved_and_fixed(issue):
+                    all_fixed_issues.add(issue)
+
+        ret = {rfile: [] for rfile in files_release}
+
+        for issue in all_fixed_issues:
+            for bugfix_commit in Commit.objects.filter(vcs_system_id=self._vcs.id, linked_issue_ids=issue.id, committer_date__gt=self._release_date, committer_date__lt=six_months).only('revision_hash', 'id', 'linked_issue_ids', 'committer_date').timeout(False):
+                
+                # in comparison to issues_six_months_szzr() we skip the inducing step and just use every bugfix commit within 6 months window
+                changed_files = set()
+                for fa in FileAction.objects.filter(commit_id=bugfix_commit.id, mode='M'):
+
+                    f = File.objects.get(id=fa.file_id)
+                    if f.path not in changed_files and java_filename_filter(f.path):
+                        changed_files.add(f.path)
+
+                current_files = None
+                if current_files is None:
+                    current_files, path_valid = self.calc_current_files(commit, self._release_commit, commit_graph, undirected_graph, rename_cache, changed_files)
+
+                    if path_valid and len(current_files.intersection(files_release))>0:
+                        for f in current_files:
+                            if f in ret.keys():
+                                inf = (issue.external_id, str(bugfix_commit.committer_date), bugfix_commit.revision_hash, str(issue.priority).lower(), str(issue.issue_type_verified).lower(), str(issue.created_at))
+
+                                if inf not in ret[f]:
+                                    ret[f].append(inf)
+
+        # todo
+        # for all files changed in a bugfixing commit find the corresponding names of the file in the release and count those
+        # bugs toward the file name
+        return ret
+
+    def issues_six_months_szzr(self):
+        """basically looks six months into the future from the release and counts the defects that we can match
+
+        returns a dict, {filename: [list of issues]}
+        """
+
+        
+        files_release = self._release_files
+
+        commit_graph = get_commit_graph(self._vcs.id)
+        undirected_graph = commit_graph.to_undirected(as_view=True)
+        rename_cache = {}
+        delete_cache = {}
+
+        all_fixed_issues = set()
+        six_months = self._release_date + relativedelta(months=6)
+        for commit in Commit.objects.filter(vcs_system_id=self._vcs.id, committer_date__gt=self._release_date, committer_date__lt=six_months, labels__issueonly_bugfix=True, linked_issue_ids__0__exists=True).only('id', 'committer_date', 'linked_issue_ids', 'revision_hash').timeout(False):
+            for issue in Issue.objects.filter(id__in=commit.linked_issue_ids):
+                if str(issue.issue_type).lower() == "bug" and jira_is_resolved_and_fixed(issue):
+                    all_fixed_issues.add(issue)
+
+        ret = {rfile: [] for rfile in files_release}
+
+        for issue in all_fixed_issues:
+            for bugfix_commit in Commit.objects.filter(vcs_system_id=self._vcs.id, linked_issue_ids=issue.id, committer_date__gt=self._release_date, committer_date__lt=six_months).only('revision_hash', 'id', 'linked_issue_ids', 'committer_date').timeout(False):
+                
+                # calculate if there are any inducings for this fa with the specific label
+                # if yes then we consider it?
+
+                changed_files = set()
+                for fa in FileAction.objects.filter(commit_id=bugfix_commit.id, mode='M'):
+                    
+                    # check if we find an inducing to this fa
+                    found = False
+                    for ifa in FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JL+R'}):
+
+                        # still need to fetch the correct one
+                        for ind in ifa.induces:
+                            if ind['change_file_action_id'] == fa.id and ind['label'] == 'JL+R' and ind['szz_type'] != 'hard_suspect':
+                                found = True
+                                break
+
+                    if not found:
+                        continue
+
+                    f = File.objects.get(id=fa.file_id)
+                    if f.path not in changed_files and java_filename_filter(f.path):
+                        changed_files.add(f.path)
+
+                current_files = None
+                if current_files is None:
+                    current_files, path_valid = self.calc_current_files(commit, self._release_commit, commit_graph, undirected_graph, rename_cache, changed_files)
+
+                    if path_valid and len(current_files.intersection(files_release))>0:
+                        for f in current_files:
+                            if f in ret.keys():
+                                inf = (issue.external_id, str(bugfix_commit.committer_date), bugfix_commit.revision_hash, str(issue.priority).lower(), str(issue.issue_type_verified).lower(), str(issue.created_at))
+
+                                if inf not in ret[f]:
+                                    ret[f].append(inf)
+
+        # todo
+        # for all files changed in a bugfixing commit find the corresponding names of the file in the release and count those
+        # bugs toward the file name
+        return ret
 
     def issues(self):
         """Load inducing file actions for labeling files accordingly.
@@ -200,11 +363,11 @@ class Volg(object):
                 for fa in FileAction.objects.filter(commit_id=bugfix_commit.id, mode='M'):
 
                     # load bug_inducing FileActions
-                    for ifa in FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JLMIV+'}):
+                    for ifa in FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JLMIV+R'}):
 
                         # still need to fetch the correct one
                         for ind in ifa.induces:
-                            if ind['change_file_action_id'] == fa.id and ind['label'] == 'JLMIV+' and ind['szz_type'] != 'hard_suspect':
+                            if ind['change_file_action_id'] == fa.id and ind['label'] == 'JLMIV+R' and ind['szz_type'] != 'hard_suspect':
 
                                 bc = Commit.objects.get(id=ifa.commit_id)
                                 blame_commit = bc.revision_hash

@@ -32,7 +32,7 @@ class Mynbou(object):
 
         self.load_graph()
 
-    def release(self):
+    def release(self, limit_type):
         """Provide a full release for the project and release hash Mynbou was initialized with.
 
         This provides every change metric, release metrics and bug fixes.
@@ -42,9 +42,21 @@ class Mynbou(object):
         change_metrics = v.change_metrics()
         self._log.info('finished change metrics')
 
-        self._log.info('loading issues')
-        issues = v.issues()
-        self._log.info('finished issue loading')
+
+        if limit_type == 'False':
+            self._log.info('loading issues')
+            issues = v.issues()
+            self._log.info('finished issue loading')
+        elif limit_type == 'JL+R':
+            self._log.info('loading issues for 6 months after relase')
+            issues = v.issues_six_months_szzr()
+            self._log.info('finished issue loading')
+        elif limit_type == 'SZZ':
+            self._log.info('loading issues for 6 months after relase')
+            issues = v.issues_six_months_szzr()
+            self._log.info('finished issue loading')
+        else:
+            raise Exception('Unknown type {}'.format(limit_type))
 
         dambros_deltas = v.dambros_deltas()
 

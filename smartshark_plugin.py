@@ -319,7 +319,11 @@ class SmartsharkPlugin(object):
         self.vcs = VCSSystem.objects.get(project_id=project_id)
 
         m = Mynbou(self.vcs, self.args.project_name, release)
-        instances, release_information = m.release()
+        instances, release_information = m.release(self.args.type)
+
+        base_file_name = self.release_name
+        if self.args.type != 'False':
+            base_file_name = '{}_{}'.format(self.release_name, self.args.type)
 
         if not instances:
             raise Exception('No instances extracted for this release')
@@ -328,12 +332,12 @@ class SmartsharkPlugin(object):
         cleaned_instances = self._clean_instances(instances)
         data = {'release_date': release_information['release_date'],
                 'instances': cleaned_instances}
-        with open(self.release_name + '.json', 'w') as outfile:
+        with open(base_file_name + '.json', 'w') as outfile:
             json.dump(data, outfile, sort_keys=True, indent=4)
 
         # information about bug_fixes written to extra file
         bug_info = self._bug_info(cleaned_instances)
-        with open(self.release_name + '_bug_fixes.json', 'w') as outfile:
+        with open(base_file_name + '_bug_fixes.json', 'w') as outfile:
             json.dump(bug_info, outfile, sort_keys=True, indent=4)
 
         # harmonize instances and get keys from harmonization, they are later used to provide a header for the csv file
@@ -342,7 +346,7 @@ class SmartsharkPlugin(object):
         # write new aggregated data
         data['instances'] = harmonized_instances
         if self.args.generate_json.lower() != "false":
-            with open(self.release_name + '_aggregated.json', 'w') as outfile:
+            with open(base_file_name + '_aggregated.json', 'w') as outfile:
                 json.dump(data, outfile, sort_keys=True, indent=4)
 
         # create csv, bugfix_count and matrix at the end
@@ -370,7 +374,7 @@ class SmartsharkPlugin(object):
                 if i not in header:
                     header.append(issue)
 
-        with open(self.release_name + '_aggregated.csv', 'w') as outfile:
+        with open(base_file_name + '_aggregated.csv', 'w') as outfile:
             outfile.write(';'.join(header) + '\n')
 
             for instance in harmonized_instances:
@@ -399,6 +403,7 @@ if __name__ == '__main__':
     parser.add_argument('-pn', '--project-name', help='Name of the project.', required=True)
     parser.add_argument('-rn', '--release-name', help='Name of the release to be mined.', required=True)
     parser.add_argument('-tr', '--release-commit', help='Target release.', required=True)
+    parser.add_argument('-tp', '--type', help='Limit window after release for bug-fixing commits to be considered to 6 months.', default='False')
     parser.add_argument('-ll', '--log-level', help='Log level for stdout (DEBUG, INFO), default INFO', default='INFO')
     parser.add_argument('-gs', '--generate-json', help='Indicate if an additional aggregated JSON file should be generated (True, False).', default='False')
 
