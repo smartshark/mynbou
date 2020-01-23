@@ -113,7 +113,7 @@ class TestDatabase(unittest.TestCase):
 
         vcs = VCSSystem.objects.get(url=url)
         m = Mynbou(vcs, project_name, release)
-        instances, release_information = m.release()
+        instances, release_information = m.release("JLMIV+")
 
         # File B/B.java has a bugfix even if it was introduced when its name was still D/D.java
         self.assertEqual(instances['B/B.java']['bug_fixes'][0][0], 'IS-1')
@@ -134,7 +134,7 @@ class TestDatabase(unittest.TestCase):
 
         vcs = VCSSystem.objects.get(url=url)
         m = Mynbou(vcs, project_name, release)
-        instances, release_information = m.release()
+        instances, release_information = m.release("JLMIV+")
 
         # in the fixtures B.java is twice renamed, nevertheless it should have the same first occurence as A.java which is never renamed
         # B.java is introduced as D.java and renamed first to C.java then to B.java
@@ -183,7 +183,7 @@ class TestDatabase(unittest.TestCase):
 
         vcs = VCSSystem.objects.get(url=url)
         m = Mynbou(vcs, project_name, release)
-        instances, release_information = m.release()
+        instances, release_information = m.release("JLMIV+")
 
         dambros = {}
         for file, values in instances.items():
@@ -303,7 +303,7 @@ class TestDatabase(unittest.TestCase):
 
         vcs = VCSSystem.objects.get(url=url)
         m = Mynbou(vcs, project_name, release)
-        instances, release_information = m.release()
+        instances, release_information = m.release("JLMIV+")
 
         hassan = {}
         moser = {}
