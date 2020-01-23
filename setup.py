@@ -10,9 +10,9 @@ if not sys.version_info[0] == 3:
 
 setup(
     name='mynbou',
-    version='0.0.1',
+    version='0.0.2',
     description='Extraction of defect prediction datasets for SmartSHARK.',
-    install_requires=['networkx>=2.2', 'pycoshark>=1.1.0', 'python-dateutil>=2.8.0', 'python-Levenshtein>=0.12.0'],
+    install_requires=['networkx>=2.2', 'pycoshark>=1.2.6', 'python-dateutil>=2.8.0', 'python-Levenshtein>=0.12.0'],
     author='atrautsch',
     author_email='alexander.trautsch@cs.uni-goettingen.de',
     url='https://github.com/smartshark/mynbou',
