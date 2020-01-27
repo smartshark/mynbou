@@ -231,7 +231,7 @@ class Volg(object):
 
         all_fixed_issues = set()
         six_months = self._release_date + relativedelta(months=6)
-        for commit in Commit.objects.filter(vcs_system_id=self._vcs.id, committer_date__gt=self._release_date, committer_date__lt=six_months, labels__issueonly_bugfix=True, linked_issue_ids__0__exists=True).only('id', 'committer_date', 'linked_issue_ids', 'revision_hash').timeout(False):
+        for commit in Commit.objects.filter(vcs_system_id=self._vcs.id, committer_date__gt=self._release_date, committer_date__lt=six_months, labels__adjustedszz_bugfix=True, szz_issue_ids__0__exists=True).only('id', 'committer_date', 'szz_issue_ids', 'revision_hash').timeout(False):
             for issue in Issue.objects.filter(id__in=commit.linked_issue_ids):
                 if str(issue.issue_type).lower() == "bug" and jira_is_resolved_and_fixed(issue):
                     all_fixed_issues.add(issue)
@@ -239,7 +239,7 @@ class Volg(object):
         ret = {rfile: [] for rfile in files_release}
 
         for issue in all_fixed_issues:
-            for bugfix_commit in Commit.objects.filter(vcs_system_id=self._vcs.id, linked_issue_ids=issue.id, committer_date__gt=self._release_date, committer_date__lt=six_months).only('revision_hash', 'id', 'linked_issue_ids', 'committer_date').timeout(False):
+            for bugfix_commit in Commit.objects.filter(vcs_system_id=self._vcs.id, labels__adjustedszz_bugfix=True, szz_issue_ids=issue.id, committer_date__gt=self._release_date, committer_date__lt=six_months).only('revision_hash', 'id', 'szz_issue_ids', 'committer_date').timeout(False):
                 
                 # in comparison to issues_six_months_szzr() we skip the inducing step and just use every bugfix commit within 6 months window
                 changed_files = set()
@@ -290,7 +290,7 @@ class Volg(object):
         ret = {rfile: [] for rfile in files_release}
 
         for issue in all_fixed_issues:
-            for bugfix_commit in Commit.objects.filter(vcs_system_id=self._vcs.id, linked_issue_ids=issue.id, committer_date__gt=self._release_date, committer_date__lt=six_months).only('revision_hash', 'id', 'linked_issue_ids', 'committer_date').timeout(False):
+            for bugfix_commit in Commit.objects.filter(vcs_system_id=self._vcs.id, linked_issue_ids=issue.id, committer_date__gt=self._release_date, labels__issueonly_bugfix=True, committer_date__lt=six_months).only('revision_hash', 'id', 'linked_issue_ids', 'committer_date').timeout(False):
                 
                 # calculate if there are any inducings for this fa with the specific label
                 # if yes then we consider it?
