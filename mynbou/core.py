@@ -53,7 +53,7 @@ class Mynbou(object):
             self._log.info('finished issue loading')
         elif limit_type == 'SZZ':
             self._log.info('loading issues for 6 months after relase')
-            issues = v.issues_six_months_szzr()
+            issues = v.issues_six_months_szz()
             self._log.info('finished issue loading')
         else:
             raise Exception('Unknown type {}'.format(limit_type))
