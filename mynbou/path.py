@@ -298,7 +298,7 @@ class Volg(object):
                 changed_files = set()
                 for fa in FileAction.objects.filter(commit_id=bugfix_commit.id, mode='M'):
                     
-                    # check if we find an inducing to this fa
+                    # check if we find at least one inducing to this fa
                     found = False
                     for ifa in FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JL+R'}):
 
@@ -307,6 +307,9 @@ class Volg(object):
                             if ind['change_file_action_id'] == fa.id and ind['label'] == 'JL+R' and ind['szz_type'] != 'hard_suspect':
                                 found = True
                                 break
+                        
+                        if found:
+                            break
 
                     if not found:
                         continue
