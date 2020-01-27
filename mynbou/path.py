@@ -232,7 +232,7 @@ class Volg(object):
         all_fixed_issues = set()
         six_months = self._release_date + relativedelta(months=6)
         for commit in Commit.objects.filter(vcs_system_id=self._vcs.id, committer_date__gt=self._release_date, committer_date__lt=six_months, labels__adjustedszz_bugfix=True, szz_issue_ids__0__exists=True).only('id', 'committer_date', 'szz_issue_ids', 'revision_hash').timeout(False):
-            for issue in Issue.objects.filter(id__in=commit.linked_issue_ids):
+            for issue in Issue.objects.filter(id__in=commit.szz_issue_ids):
                 if str(issue.issue_type).lower() == "bug" and jira_is_resolved_and_fixed(issue):
                     all_fixed_issues.add(issue)
 
@@ -256,7 +256,7 @@ class Volg(object):
                     if path_valid and len(current_files.intersection(files_release))>0:
                         for f in current_files:
                             if f in ret.keys():
-                                inf = (issue.external_id, str(bugfix_commit.committer_date), bugfix_commit.revision_hash, str(issue.priority).lower(), str(issue.issue_type_verified).lower(), str(issue.created_at))
+                                inf = (issue.external_id, str(bugfix_commit.committer_date), bugfix_commit.revision_hash, str(issue.priority).lower(), str(issue.issue_type).lower(), str(issue.created_at))
 
                                 if inf not in ret[f]:
                                     ret[f].append(inf)
@@ -322,7 +322,7 @@ class Volg(object):
                     if path_valid and len(current_files.intersection(files_release))>0:
                         for f in current_files:
                             if f in ret.keys():
-                                inf = (issue.external_id, str(bugfix_commit.committer_date), bugfix_commit.revision_hash, str(issue.priority).lower(), str(issue.issue_type_verified).lower(), str(issue.created_at))
+                                inf = (issue.external_id, str(bugfix_commit.committer_date), bugfix_commit.revision_hash, str(issue.priority).lower(), str(issue.issue_type).lower(), str(issue.created_at))
 
                                 if inf not in ret[f]:
                                     ret[f].append(inf)
