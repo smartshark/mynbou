@@ -304,7 +304,7 @@ class Volg(object):
 
                         # still need to fetch the correct one
                         for ind in ifa.induces:
-                            if ind['change_file_action_id'] == fa.id and ind['label'] == 'JL+R' and ind['szz_type'] != 'hard_suspect':
+                            if ind['change_file_action_id'] == fa.id and ind['label'] == 'JL+R':
                                 found = True
                                 break
                         
