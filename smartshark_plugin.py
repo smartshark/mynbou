@@ -82,6 +82,21 @@ class SmartsharkPlugin(object):
         # aggregate static soucre code metrics where it makes sense
         bug_fixes = {}
         aggregated_instances = []
+        latest_bugfix = {}
+
+        for instance in cleaned_instances:
+            inst = {}
+            for k, v in instance.items():
+                # create issue matrix
+                if k.startswith('bug_fixes'):
+                    # this just creates a list of bugfix commits for each issue found
+                    # we need this to get the max() of bugfix_commit_date
+                    for prei in v:
+                        if prei[0] not in latest_bugfix.keys():
+                            latest_bugfix[prei[0]] = []
+                        latest_bugfix[prei[0]].append(prei[1]) 
+
+
         for instance in cleaned_instances:
             inst = {}
             for k, v in instance.items():
@@ -98,15 +113,6 @@ class SmartsharkPlugin(object):
 
                 # create issue matrix
                 if k.startswith('bug_fixes'):
-
-                    # this just creates a list of bugfix commits for each issue found
-                    # we need this to get the max() of bugfix_commit_date
-                    latest_bugfix = {}
-                    for prei in v:
-                        if prei[0] not in latest_bugfix.keys():
-                            latest_bugfix[prei[0]] = []
-                        latest_bugfix[prei[0]].append(prei[1])
-
                     inst['BUGFIX_issues'] = []
                     unique_ids = set()
                     for iss in v:  # tuple is like this: (id, commitdate, revision hash, priority, type)

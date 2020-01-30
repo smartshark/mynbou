@@ -173,15 +173,16 @@ class Volg(object):
 
     def calc_current_files(self, commit, release_commit, commit_graph, undirected_graph, rename_cache, current_files):
         """determines the java files changed by a commit and returns them as a set"""
-        # current_files = set()
-        # for fileaction in FileAction.objects(commit_id=commit.id):
-        #     file = File.objects(id=fileaction.file_id).get()
-        #     if file.path not in current_files and java_filename_filter(file.path):
-        #         current_files.add(file.path)
-        
-        path_valid = nx.has_path(undirected_graph, release_commit.revision_hash, commit.revision_hash)
-        if path_valid:
-            path = nx.shortest_path(undirected_graph, release_commit.revision_hash, commit.revision_hash)
+        path_valid = False
+        current_files_start = current_files.copy()
+        try:
+            shortest_paths = list(nx.all_shortest_paths(undirected_graph, release_commit.revision_hash, commit.revision_hash))
+        except nx.NetworkXNoPath:
+            shortest_paths = []
+        for path in shortest_paths:
+            # path = nx.shortest_path(undirected_graph, release_commit.revision_hash, commit.revision_hash)
+            current_files = current_files_start.copy()
+            path_valid = True
             had_backward_edge = False
             for i in range(len(path)-1, 0, -1): # going backwards
                 if path[i-1] in commit_graph.pred[path[i]]:
@@ -213,6 +214,8 @@ class Volg(object):
                             if rename[0] in current_files:
                                 current_files.remove(rename[0])
                                 current_files.add(rename[1])
+            if path_valid:
+                break
         return current_files, path_valid
 
     def issues_six_months_szz(self):
@@ -251,7 +254,7 @@ class Volg(object):
 
                 current_files = None
                 if current_files is None:
-                    current_files, path_valid = self.calc_current_files(commit, self._release_commit, commit_graph, undirected_graph, rename_cache, changed_files)
+                    current_files, path_valid = self.calc_current_files(bugfix_commit, self._release_commit, commit_graph, undirected_graph, rename_cache, changed_files)
 
                     if path_valid and len(current_files.intersection(files_release))>0:
                         for f in current_files:
@@ -320,7 +323,7 @@ class Volg(object):
 
                 current_files = None
                 if current_files is None:
-                    current_files, path_valid = self.calc_current_files(commit, self._release_commit, commit_graph, undirected_graph, rename_cache, changed_files)
+                    current_files, path_valid = self.calc_current_files(bugfix_commit, self._release_commit, commit_graph, undirected_graph, rename_cache, changed_files)
 
                     if path_valid and len(current_files.intersection(files_release))>0:
                         for f in current_files:
