@@ -300,29 +300,16 @@ class Volg(object):
 
                 changed_files = set()
                 for fa in FileAction.objects.filter(commit_id=bugfix_commit.id, mode='M'):
-                    
+
                     # check if we find at least one inducing to this fa
-                    found = False
-                    for ifa in FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JL+R'}):
-
-                        # still need to fetch the correct one
-                        for ind in ifa.induces:
-                            if ind['change_file_action_id'] == fa.id and ind['label'] == 'JL+R':
-                                found = True
-                                break
-                        
-                        if found:
-                            break
-
-                    if not found:
+                    if not FileAction.objects.filter(induces__match={'change_file_action_id': fa.id, 'label': 'JL+R'}).count() > 0:
                         continue
 
                     f = File.objects.get(id=fa.file_id)
                     if f.path not in changed_files and java_filename_filter(f.path):
                         changed_files.add(f.path)
 
-                current_files = None
-                if current_files is None:
+                if len(changed_files)>0:
                     current_files, path_valid = self.calc_current_files(bugfix_commit, self._release_commit, commit_graph, undirected_graph, rename_cache, changed_files)
 
                     if path_valid and len(current_files.intersection(files_release))>0:
