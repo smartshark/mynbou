@@ -10,8 +10,9 @@ import logging
 import json
 import timeit
 import math
+import datetime
 
-from pycoshark.mongomodels import Project, VCSSystem
+from pycoshark.mongomodels import Project, VCSSystem, MynbouData
 from pycoshark.utils import create_mongodb_uri_string
 from pycoshark.utils import get_base_argparser
 
@@ -94,8 +95,7 @@ class SmartsharkPlugin(object):
                     for prei in v:
                         if prei[0] not in latest_bugfix.keys():
                             latest_bugfix[prei[0]] = []
-                        latest_bugfix[prei[0]].append(prei[1]) 
-
+                        latest_bugfix[prei[0]].append(prei[1])
 
         for instance in cleaned_instances:
             inst = {}
@@ -351,7 +351,7 @@ class SmartsharkPlugin(object):
 
         # write new aggregated data
         data['instances'] = harmonized_instances
-        if self.args.generate_json.lower() != "false":
+        if self.args.generate_json.lower() != "false" or self.args.save_to_mongo:
             with open(base_file_name + '_aggregated.json', 'w') as outfile:
                 json.dump(data, outfile, sort_keys=True, indent=4)
 
@@ -389,6 +389,21 @@ class SmartsharkPlugin(object):
                     inst.append(instance[key])
                 outfile.write(';'.join([str(i) for i in inst]) + '\n')
 
+        # upload to mynbou data
+        if self.args.save_to_mongo:
+            try:
+                m = MynbouData.objects.get(vcs_system_id=self.vcs.id, name=self.release_name, path_approach='default', bugfix_label=self.args.type, metric_approach='default')
+            except MynbouData.DoesNotExist:
+                m = MynbouData(vcs_system_id=self.vcs.id, name=self.release_name, path_approach='default', bugfix_label=self.args.type, metric_approach='default')
+
+            if m.file:
+                m.file.delete()
+            m.last_updated = datetime.datetime.now()
+            m.save()
+            with open(base_file_name + '_aggregated.json', 'rb') as fd:
+                m.file.put(fd, content_type='application/json')
+            m.save()
+
         end = timeit.default_timer() - start
         log.info("Finished mynbou in {:.5f}s".format(end))
 
@@ -403,6 +418,7 @@ def main(args):
     c = SmartsharkPlugin(args)
     c.start_mining(args.release_commit)
 
+
 if __name__ == '__main__':
     parser = get_base_argparser('Analyze the given URI. An URI should be a GIT Repository address.', '1.0.0')
 
@@ -412,5 +428,6 @@ if __name__ == '__main__':
     parser.add_argument('-tp', '--type', help='Limit window after release for bug-fixing commits to be considered to 6 months.', default='False')
     parser.add_argument('-ll', '--log-level', help='Log level for stdout (DEBUG, INFO), default INFO', default='INFO')
     parser.add_argument('-gs', '--generate-json', help='Indicate if an additional aggregated JSON file should be generated (True, False).', default='False')
+    parser.add_argument('--save-to-mongo', help='Save result to MongoDB', action='store_true')
 
     main(parser.parse_args())
